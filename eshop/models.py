@@ -11,4 +11,11 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.id}: {self.name}"
 
-   
+class Image(models.Model):
+    name = models.ImageField(null=True, blank=True, upload_to='products/images/')
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='images')
+
+    def __str__(self):
+        return f"{self.id}: {self.name}"
+
+
