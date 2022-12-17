@@ -11,6 +11,14 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.id}: {self.name}"
 
+    @property
+    def first_image(self):
+        if self.images.all():
+            return self.images.all()[0].name.url
+        else:
+            return ''
+
+
 class Image(models.Model):
     name = models.ImageField(null=True, blank=True, upload_to='products/images/')
     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='images')
