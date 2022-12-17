@@ -7,3 +7,15 @@ def index(request):
 
 def shop(request):
     return render(request, "eshop/shop.html", {})
+
+def detail(request):
+    return render(request,"eshop/detail.html", {})
+
+def contact(request):
+    return render(request,"eshop/contact.html", {})
+
+def cart(request):
+    return render(request,"eshop/cart.html", {})
+
+def checkout(request):
+    return render(request,"eshop/checkout.html", {})

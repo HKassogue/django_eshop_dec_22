@@ -20,5 +20,9 @@ from eshop import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='home'),
-    path('shop', views.shop, name='shop')
+    path('shop', views.shop, name='shop'),
+    path('detail', views.detail, name="detail"),
+    path('contact', views.contact, name="contact"),
+    path('cart', views.cart, name="cart"),
+    path('checkout', views.checkout, name="checkout"),
 ]
