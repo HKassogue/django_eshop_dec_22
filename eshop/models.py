@@ -27,3 +27,33 @@ class Image(models.Model):
         return f"{self.id}: {self.name}"
 
 
+class Order(models.Model):
+    reference = models.CharField(max_length=64, null=False, blank=False)
+    #costumer = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now=True)
+    completed = models.BooleanField(default=False)
+    products = models.ManyToManyField('Product', through='OrderItem', related_name="orders")
+
+    def __str__(self):
+        return f'{self.reference}'
+
+    # def save(self, *args, **kwargs) :
+    #     super().save(*args, **kwargs)
+    #     self.total = 0
+    #     for elt in Vente_piece.objects.filter(vente__id=self.id):
+    #         self.total += elt.pv_unitaire * elt.quantite
+    #         elt.piece.q_stock -= elt.quantite
+    #         elt.piece.save()
+    #         if elt.piece.q_stock<elt.piece.q_cmd:
+    #             cmd, _etat = Commande.objects.get_or_create(statut = "Edition")
+    #             cmd.pieces.add(piece = elt.piece, quantite = elt.piece.q_cmd)
+    #             cmd.save()
+    #     self.num = str(self.id).zfill(4) + '-' + str(datetime.datetime.today().year)
+    #     super().save(*args, **kwargs)
+
+
+class OrderItem(models.Model):
+    product = models.ForeignKey('Product', null=True, on_delete=models.SET_NULL)
+    order = models.ForeignKey('Order', null=True, on_delete=models.SET_NULL)
+    quantity = models.PositiveSmallIntegerField(default=1)
+    price = models.FloatField(null=True)
