@@ -36,3 +36,14 @@ class Category(models.Model):
 
     def __str__(self) -> str:
         return f" {self.id}: {self.name}"
+
+    @property
+    def nbr(self):
+        if self.products.all():
+            return self.products.count()
+        else:
+            return 0
+    @property
+    def subcategories_elts(self):
+        return self.products.all()
+    
