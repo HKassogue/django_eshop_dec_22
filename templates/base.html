@@ -150,12 +150,6 @@
                             {% else %}
                                 <a href="{% url 'shop' %}" class="nav-item nav-link">Shop</a>
                             {% endif %}
-
-                            {% if request.path == '/detail' %}
-                                <a href="{% url 'detail' %}" class="nav-item nav-link active">Shop Detail</a>
-                            {% else %}
-                                <a href="{% url 'detail' %}" class="nav-item nav-link">Shop Detail</a>
-                            {% endif %}
                             
                             <div class="nav-item dropdown">
                                 {% if request.path == '/cart' or request.path == '/checkout' %}

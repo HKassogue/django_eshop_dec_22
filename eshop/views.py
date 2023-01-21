@@ -15,8 +15,14 @@ def index(request):
 def shop(request):
     return render(request, "eshop/shop.html", {})
 
-def detail(request):
-    return render(request,"eshop/detail.html", {})
+def detail(request, id):
+    product = Product.objects.get(id=id)
+    categories = Category.objects.all()
+    context =  {
+        'product': product,
+        'categories': categories
+    }
+    return render(request,"eshop/detail.html", context)
 
 def contact(request):
     return render(request,"eshop/contact.html", {})
