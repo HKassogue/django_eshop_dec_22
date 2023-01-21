@@ -210,39 +210,29 @@
                         </div>
                     {% endfor %}
                     <div class = "col-12">
+                        <nav>
                         {% if products.has_other_pages %}
                             <ul class="pagination justify-content-center">
                                 {% if products.has_previous %}
                                     <li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}">&laquo; Previous</a></li>
                                 {% else %}
-                                    <li class="page-item disabled">
-                                        <a href = "!#" class = "page-link">
-                                            <span>&laquo; Previous</span>
-                                        </a>
-                                    </li>
+                                    <li class="page-item disabled"><a class="page-link" href="!#"><span>&laquo; Previous</span></a></li>
                                 {% endif %}
                                 {% for i in products.paginator.page_range %}
                                     {% if products.number == i %}
-                                        <li class="page-item active">
-                                            <a href = "!#" class = "page-link">
-                                                <span>{{ i }} <span class="sr-only">(current)</span></span>
-                                            </a>
-                                        </li>
+                                        <li class="page-item active"><a class="page-link" href="!#"><span>{{ i }}<span class="sr-only">(current)</span></span></a></li>
                                     {% else %}
                                         <li class ="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
                                     {% endif %}
                                 {% endfor %}
                                 {% if products.has_next %}
-                                    <li class="page-item "><a class="page-link" href="?page={{ products.next_page_number }}">Next &raquo;</a></li>
+                                    <li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}">Next &raquo;</a></li>
                                 {% else %}
-                                    <li class="page-item disabled">
-                                        <a href = "!#" class = "page-link">
-                                            <span>Next &raquo;</span>
-                                        </a>
-                                    </li>
+                                    <li class="page-item disabled"><a class="page-link" href="!#"><span>Next &raquo;</span></a></li>
                                 {% endif %}
                             </ul>
                         {% endif %}
+                        </nav>
                     </div>
                 </div>
             </div>
