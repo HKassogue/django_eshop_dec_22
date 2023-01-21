@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from .models import Product, Category
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 # Create your views here.
 def index(request):
@@ -13,7 +14,23 @@ def index(request):
     return render(request, "eshop/index.html", context)
 
 def shop(request):
-    return render(request, "eshop/shop.html", {})
+    products = Product.objects.all()
+    categories = Category.objects.all()
+    page = request.GET.get('page', 1)
+
+    paginator = Paginator(products, 6)
+    try:
+        produit = paginator.page(page)
+    except PageNotAnInteger:
+        produit = paginator.page(1)
+    except EmptyPage:
+        produit = paginator.page(paginator.num_pages)
+
+    context = {
+         'products' : produit,
+         'categories' :categories,
+    }
+    return render(request,"eshop/shop.html", context)
 
 def detail(request, id):
     product = Product.objects.get(id=id)
