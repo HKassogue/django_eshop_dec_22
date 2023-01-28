@@ -83,3 +83,17 @@ class Like(models.Model):
         on_delete=models.CASCADE, related_name='likes')
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
 
+
+class Coupon_type(models.Model):
+    name = models.CharField(max_length=30, null=False, blank=False, unique=True)
+
+class Coupon(models.Model):
+    code = models.CharField(max_length=30, null=False, blank=False, unique=True)
+    description = models.TextField(null=True, blank=True)
+    coupon_type = models.ForeignKey('Coupon_type', null=True, blank=True, on_delete=models.SET_NULL)
+    discount = models.SmallIntegerField(default=1, null=True, blank=False)
+    max_usage = models.SmallIntegerField(default=1, null=True, blank=False)
+    validity = models.DateTimeField(null=False, blank=False)
+    is_valid = models.BooleanField(default=True, null=False, blank=False)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+
