@@ -30,9 +30,18 @@ class Image(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=45, null=False, blank=False, unique=True)
+    slug = models.CharField(max_length=35, null=True, blank=True, 
+        unique=True)
+    active = models.BooleanField(default=True, null=False, blank=False)
+    created_at = models.DateTimeField(null=False, blank=False, 
+        auto_now=True)
     image = models.ImageField(null=True, blank=True, upload_to='images/categories/')
     parent = models.ForeignKey('Category', null=True, blank=True, 
         related_name='subcategories', on_delete=models.SET_NULL)
+
+    class Meta:
+        verbose_name_plural = "categories"
+        ordering = ['-created_at']
 
     def __str__(self) -> str:
         return f" {self.id}: {self.name}"
