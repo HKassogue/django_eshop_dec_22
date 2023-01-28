@@ -143,3 +143,20 @@ class Payments(models.Model):
     mode = models.CharField(max_length=30, default='Liquidity', null=False, blank=False)
     details = models.TextField(null=True, blank=True)
     order = models.OneToOneField('Order', on_delete=models.PROTECT, related_name='payment')
+
+
+class Alerts(models.Model):
+    status = models.CharField(max_length=30, null=False, blank=False)
+    type = models.CharField(max_length=30, null=False, blank=False)
+    details = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    traited_at = models.DateTimeField(null=False, blank=False)
+    user = models.ForeignKey(User, null=False, blank=False, on_delete=models.PROTECT, 
+        related_name='+')
+
+
+class Faqs(models.Model):
+    type = models.CharField(max_length=30, null=False, blank=False)
+    question = models.TextField(null=True, blank=True)
+    answer = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
