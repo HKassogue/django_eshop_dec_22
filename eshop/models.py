@@ -65,3 +65,21 @@ class Customer(models.Model):
     address = models.CharField(max_length=30, null=True, blank=True)
     zipcode = models.CharField(max_length=6, null=True, blank=True)
     city = models.CharField(max_length=30, null=True, blank=True)
+
+
+class Review(models.Model):
+    rate = models.FloatField(null=False, blank=False)
+    comment = models.TextField(null=True, blank=True)
+    name = models.CharField(max_length=30, null=False, blank=False)
+    email = models.CharField(max_length=30, null=False, blank=False)
+    product = models.ForeignKey('Product', null=False, blank=False, 
+        on_delete=models.CASCADE, related_name='reviews')
+    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+
+class Like(models.Model):
+    email = models.CharField(max_length=30, null=False, blank=False)
+    liked = models.BooleanField(default=True, null=False, blank=False)
+    product = models.ForeignKey('Product', null=False, blank=False, 
+        on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+
