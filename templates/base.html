@@ -146,9 +146,9 @@
                         <div class="navbar-nav mr-auto py-0">
                             <a href="{% url 'home' %}" class="nav-item nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
                             {% if request.path == '/shop' %}
-                                <a href="{% url 'shop' %}" class="nav-item nav-link active">Shop</a>
+                                <a href="{% url 'shop' nbr=6%}" class="nav-item nav-link active">Shop</a>
                             {% else %}
-                                <a href="{% url 'shop' %}" class="nav-item nav-link">Shop</a>
+                                <a href="{% url 'shop' nbr=6%}" class="nav-item nav-link">Shop</a>
                             {% endif %}
                             
                             <div class="nav-item dropdown">

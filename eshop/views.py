@@ -13,13 +13,14 @@ def index(request):
     }
     return render(request, "eshop/index.html", context)
 
-def shop(request):
+def shop(request, nbr=6):
     products = Product.objects.all()
     categories = Category.objects.all()
     total = sum([category.products.count() for category in categories])
     page = request.GET.get('page', 1)
+    # nbr = request.GET.get('nbr', 6)
 
-    paginator = Paginator(products, 6)
+    paginator = Paginator(products, nbr)
     try:
         produit = paginator.page(page)
     except PageNotAnInteger:
