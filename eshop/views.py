@@ -16,6 +16,7 @@ def index(request):
 def shop(request):
     products = Product.objects.all()
     categories = Category.objects.all()
+    total = sum([category.products.count() for category in categories])
     page = request.GET.get('page', 1)
 
     paginator = Paginator(products, 6)
@@ -29,6 +30,7 @@ def shop(request):
     context = {
          'products' : produit,
          'categories' :categories,
+         'total': total
     }
     return render(request,"eshop/shop.html", context)
 
