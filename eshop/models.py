@@ -112,3 +112,15 @@ class Order_details(models.Model):
     product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
     quantity = models.SmallIntegerField(default=1, null=True, blank=False)
     price = models.SmallIntegerField(default=1, null=True, blank=False)
+
+
+class Arrival(models.Model):
+    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    is_closed = models.BooleanField(default=False, null=False, blank=False)
+    products = models.ManyToManyField('Product', through='Arrival_details', related_name='+')
+
+class Arrival_details(models.Model):
+    arrival = models.ForeignKey('Arrival', null=True, blank=False, on_delete=models.SET_NULL)
+    product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
+    quantity = models.SmallIntegerField(default=1, null=True, blank=True)
