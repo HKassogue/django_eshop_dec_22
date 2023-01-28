@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # Create your models here.
 class Product(models.Model):
@@ -52,4 +53,15 @@ class Category(models.Model):
     def __str__(self) -> str:
         return f" {self.id}: {self.name}"
 
+
+class MyUser(models.Model):
+    user = models.OneToOneField(User, null=False, blank=False, on_delete=models.CASCADE)
+    avatar = models.ImageField(upload_to='images/users/', null=True, blank=True)
     
+
+class Customer(models.Model):
+    user = models.OneToOneField(User, null=False, blank=False, on_delete=models.CASCADE)
+    avatar = models.ImageField(upload_to='images/customers/', null=True, blank=True)
+    address = models.CharField(max_length=30, null=True, blank=True)
+    zipcode = models.CharField(max_length=6, null=True, blank=True)
+    city = models.CharField(max_length=30, null=True, blank=True)
