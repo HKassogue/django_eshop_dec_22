@@ -124,3 +124,22 @@ class Arrival_details(models.Model):
     arrival = models.ForeignKey('Arrival', null=True, blank=False, on_delete=models.SET_NULL)
     product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
     quantity = models.SmallIntegerField(default=1, null=True, blank=True)
+
+
+class Delivery(models.Model):
+    address = models.CharField(max_length=30, null=False, blank=False)
+    zipcode = models.CharField(max_length=30, null=False, blank=False)
+    city = models.CharField(max_length=30, null=False, blank=False)
+    price = models.FloatField(default=0, null=False, blank=False)
+    state = models.CharField(max_length=30, null=True, blank=True)
+    order = models.ForeignKey('Order', null=False, blank=False, on_delete=models.PROTECT, 
+        related_name='deliveries')
+    delivered_by = models.ForeignKey('MyUser', null=True, blank=True, on_delete=models.SET_NULL, 
+        related_name='+')
+
+class Payments(models.Model):
+    ref = models.CharField(max_length=30, null=False, blank=False, unique=True)
+    payed_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    mode = models.CharField(max_length=30, default='Liquidity', null=False, blank=False)
+    details = models.TextField(null=True, blank=True)
+    order = models.OneToOneField('Order', on_delete=models.PROTECT, related_name='payment')
