@@ -97,3 +97,18 @@ class Coupon(models.Model):
     is_valid = models.BooleanField(default=True, null=False, blank=False)
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
 
+
+class Order(models.Model):
+    reference = models.CharField(max_length=30, null=False, blank=False, unique=True)
+    coupon = models.ForeignKey('Coupon', null=True, blank=True, on_delete=models.SET_NULL, 
+        related_name='orders')
+    customer = models.ForeignKey('Customer', null=True, blank=False, 
+        on_delete=models.SET_NULL, related_name='orders')
+    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    products = models.ManyToManyField('Product', through='Order_details', related_name='orders')
+
+class Order_details(models.Model):
+    order = models.ForeignKey('Order', null=True, blank=False, on_delete=models.SET_NULL)
+    product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
+    quantity = models.SmallIntegerField(default=1, null=True, blank=False)
+    price = models.SmallIntegerField(default=1, null=True, blank=False)
