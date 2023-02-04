@@ -22,13 +22,16 @@ def shop(request):
     perpage = request.GET.get('per', 6)
     sort = request.GET.get('sort', 'latest')
 
-    if sort == 'latest':
-        products = Product.objects.all()
-    elif sort == 'popular':
-        products = Product.objects.all().annotate(nbr_likes=Count('likes')).order_by('-nbr_likes')
+    query = request.GET.get('q', '')
+    if not query:
+        if sort == 'latest':
+            products = Product.objects.all()
+        elif sort == 'popular':
+            products = Product.objects.all().annotate(nbr_likes=Count('likes')).order_by('-nbr_likes')
+        else:
+            products = Product.objects.all().annotate(nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
     else:
-        products = Product.objects.all().annotate(nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
-
+        products = Product.objects.filter(name__icontains=query)
 
     paginator = Paginator(products, perpage)
     try:
