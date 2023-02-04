@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .models import Product, Category
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -44,6 +44,32 @@ def shop(request):
          'total': total
     }
     return render(request,"eshop/shop.html", context)
+
+
+def search(request):
+    query = request.GET.get('q', '')
+    if not query:
+        return redirect('shop')
+
+    page = request.GET.get('page', 1)
+    perpage = request.GET.get('per', 6)
+    products = Product.objects.filter(name__icontains=query)
+    categories = Category.objects.all()
+
+    paginator = Paginator(products, perpage)
+    try:
+        products = paginator.page(page)
+    except PageNotAnInteger:
+        products = paginator.page(1)
+    except EmptyPage:
+        products = paginator.page(paginator.num_pages)
+
+    context = {
+         'products' : products,
+         'categories' :categories,
+    }
+    return render(request,"eshop/shop.html", context)
+
 
 def detail(request, id):
     product = Product.objects.get(id=id)
