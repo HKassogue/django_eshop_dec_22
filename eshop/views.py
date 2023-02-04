@@ -15,23 +15,34 @@ def index(request):
     }
     return render(request, "eshop/index.html", context)
 
-def shop(request):
+def shop(request, cat='all'):
     categories = Category.objects.all()
     total = sum([category.products.count() for category in categories])
     page = request.GET.get('page', 1)
     perpage = request.GET.get('per', 6)
     sort = request.GET.get('sort', 'latest')
-
     query = request.GET.get('q', '')
-    if not query:
-        if sort == 'latest':
-            products = Product.objects.all()
-        elif sort == 'popular':
-            products = Product.objects.all().annotate(nbr_likes=Count('likes')).order_by('-nbr_likes')
+
+    if cat == 'all':
+        if not query:
+            if sort == 'latest':
+                products = Product.objects.all()
+            elif sort == 'popular':
+                products = Product.objects.all().annotate(nbr_likes=Count('likes')).order_by('-nbr_likes')
+            else:
+                products = Product.objects.all().annotate(nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
         else:
-            products = Product.objects.all().annotate(nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
+            products = Product.objects.filter(name__icontains=query)
     else:
-        products = Product.objects.filter(name__icontains=query)
+        if not query:
+            if sort == 'latest':
+                products = Product.objects.filter(category__slug=cat)
+            elif sort == 'popular':
+                products = Product.objects.filter(category__slug=cat).annotate(nbr_likes=Count('likes')).order_by('-nbr_likes')
+            else:
+                products = Product.objects.filter(category__slug=cat).annotate(nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
+        else:
+            products = Product.objects.filter(category__slug=cat).filter(name__icontains=query)
 
     paginator = Paginator(products, perpage)
     try:
