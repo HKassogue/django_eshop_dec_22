@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from .models import Product, Category
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.db.models import Count
+
 
 # Create your views here.
 def index(request):
@@ -14,11 +16,19 @@ def index(request):
     return render(request, "eshop/index.html", context)
 
 def shop(request):
-    products = Product.objects.all()
     categories = Category.objects.all()
     total = sum([category.products.count() for category in categories])
     page = request.GET.get('page', 1)
     perpage = request.GET.get('per', 6)
+    sort = request.GET.get('sort', 'latest')
+
+    if sort == 'latest':
+        products = Product.objects.all()
+    elif sort == 'popular':
+        products = Product.objects.all().annotate(nbr_likes=Count('likes')).order_by('-nbr_likes')
+    else:
+        products = Product.objects.all().annotate(nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
+
 
     paginator = Paginator(products, perpage)
     try:
