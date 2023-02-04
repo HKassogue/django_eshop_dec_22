@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load set_get %}
 
 {% block caroussel %}
 {% endblock %}
@@ -118,10 +119,19 @@
                                 <div class="btn-group ml-2">
                                     <button type="button" class="btn btn-sm btn-light dropdown-toggle" data-toggle="dropdown">Showing</button>
                                     <div class="dropdown-menu dropdown-menu-right">
-                                        <a class="dropdown-item" href="{% url 'shop' nbr=10 %}">10</a>
-                                        {% comment %} <a class="dropdown-item" href="{% if '?' in request.get_full_path %}&{% else %}?{% endif %}nbr=10">10</a> {% endcomment %}
-                                        <a class="dropdown-item" href="&nbr=20">20</a>
-                                        <a class="dropdown-item" href="&nbr=30">30</a>
+                                        {% if '?' not in request.get_full_path %}
+                                            <a class="dropdown-item" href="?per=6">6</a>
+                                            <a class="dropdown-item" href="?per=21">21</a>
+                                            <a class="dropdown-item" href="?per=30">30</a>
+                                        {% elif 'per' not in request.get_full_path %}
+                                            <a class="dropdown-item" href="{{request.get_full_path}}&per=6">6</a>
+                                            <a class="dropdown-item" href="{{request.get_full_path}}&per=21">21</a>
+                                            <a class="dropdown-item" href="{{request.get_full_path}}&per=30">30</a>
+                                        {% else %}
+                                            <a class="dropdown-item" href="{{request.get_full_path|set_per:6}}">6</a>
+                                            <a class="dropdown-item" href="{{request.get_full_path|set_per:21}}">21</a>
+                                            <a class="dropdown-item" href="{{request.get_full_path|set_per:30}}">30</a>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>

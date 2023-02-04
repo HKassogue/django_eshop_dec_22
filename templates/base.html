@@ -145,36 +145,15 @@
                     <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
                         <div class="navbar-nav mr-auto py-0">
                             <a href="{% url 'home' %}" class="nav-item nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
-                            {% if request.path == '/shop' %}
-                                <a href="{% url 'shop' nbr=6%}" class="nav-item nav-link active">Shop</a>
-                            {% else %}
-                                <a href="{% url 'shop' nbr=6%}" class="nav-item nav-link">Shop</a>
-                            {% endif %}
-                            
+                            <a href="{% url 'shop' %}" class="nav-item nav-link {% if request.path == '/shop' %}active{% endif %}">Shop</a>
                             <div class="nav-item dropdown">
-                                {% if request.path == '/cart' or request.path == '/checkout' %}
-                                <a href="#" class="nav-link dropdown-toggle active" data-toggle="dropdown">Pages <i class="fa fa-angle-down mt-1"></i></a>
-                                {% else %}
-                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Pages <i class="fa fa-angle-down mt-1"></i></a>
-                                {% endif %}
+                                <a href="#" class="nav-link dropdown-toggle {% if request.path == '/cart' or request.path == '/checkout' %}active{% endif %}" data-toggle="dropdown">Pages <i class="fa fa-angle-down mt-1"></i></a>
                                 <div class="dropdown-menu bg-primary rounded-0 border-0 m-0">
-                                    {% if request.path == '/cart' %}
-                                        <a href="{% url 'cart' %}" class="dropdown-item active">Shopping Cart</a>
-                                    {% else %}
-                                        <a href="{% url 'cart' %}" class="dropdown-item">Shopping Cart</a>
-                                    {% endif %}
-                                    {% if request.path == '/checkout' %}
-                                        <a href="{% url 'checkout' %}" class="dropdown-item active">Checkout</a>
-                                    {% else %} 
-                                        <a href="{% url 'checkout' %}" class="dropdown-item">Checkout</a>
-                                    {% endif %}
+                                    <a href="{% url 'cart' %}" class="dropdown-item {% if request.path == '/cart' %}active{% endif %}">Shopping Cart</a>
+                                    <a href="{% url 'checkout' %}" class="dropdown-item {% if request.path == '/checkout' %}active{% endif %}">Checkout</a>
                                 </div>
                             </div>
-                            {% if request.path == '/contact' %}
-                                <a href="{% url 'contact' %}" class="nav-item nav-link active">Contact</a>
-                            {% else %} 
-                                <a href="{% url 'contact' %}" class="nav-item nav-link">Contact</a>
-                            {% endif %}
+                            <a href="{% url 'contact' %}" class="nav-item nav-link {% if request.path == '/contact' %}active{% endif %}">Contact</a>
                         </div>
                         <div class="navbar-nav ml-auto py-0 d-none d-lg-block">
                             <a href="" class="btn px-0">
