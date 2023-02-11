@@ -30,7 +30,7 @@ urlpatterns = [
     path('cart', views.cart, name="cart"),
     path('checkout', views.checkout, name="checkout"),
     path('search', views.search, name='search'),
-    path('', include('auth.urls')),
+    path('', include('myauth.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
