@@ -88,9 +88,12 @@ def search(request):
 def detail(request, id):
     product = Product.objects.get(id=id)
     categories = Category.objects.all()
+    sim_products = Product.objects.filter(category=product.category).filter(active=True)
+
     context =  {
         'product': product,
-        'categories': categories
+        'categories': categories,
+        'sim_products': sim_products,
     }
     return render(request,"eshop/detail.html", context)
 

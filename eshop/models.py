@@ -26,6 +26,10 @@ class Product(models.Model):
         else:
             return ''
 
+    @property
+    def fake_promo(self):
+        return self.price * 1.09
+
 
 class Image(models.Model):
     name = models.ImageField(null=True, blank=True, upload_to='images/products/')
