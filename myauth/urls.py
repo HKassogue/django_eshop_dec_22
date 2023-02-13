@@ -8,5 +8,6 @@ urlpatterns = [
     #     view=LoginView.as_view(template_name='myauth/login.html', 
     #         redirect_authenticated_user=True), 
     #     name='login'),
-    path('logout', view=LogoutView.as_view(), name='logout')
+    path('logout', view=LogoutView.as_view(), name='logout'),
+    path('register', views.register, name='register'),
 ]

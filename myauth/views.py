@@ -18,3 +18,19 @@ def login(request):
         else:
            context['errors'] = True
     return render(request, 'myauth/login.html', context)
+
+def register(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+        
+    from django.contrib.auth.forms import UserCreationForm
+    form = UserCreationForm(request.POST or None)
+    if form.is_valid():
+        user = form.save()
+        from eshop.models import Customer
+        Customer(user=user).save()
+        from django.contrib.auth import authenticate, login
+        login(request, 
+            authenticate(username=user.username, password=form.cleaned_data['password1']))
+        return redirect('home')
+    return render(request, 'myauth/register.html', {'form': form})
