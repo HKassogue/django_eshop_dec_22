@@ -43,10 +43,15 @@
             <div class="col-lg-6 text-center text-lg-right">
                 <div class="d-inline-flex align-items-center">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-sm btn-light dropdown-toggle" data-toggle="dropdown">My Account</button>
+                        <button type="button" class="btn btn-sm btn-light dropdown-toggle" data-toggle="dropdown">My Account{% if request.user.is_authenticated %} (<small style="color: blue">{{request.user.username}}</small>) {% endif%} </button>
                         <div class="dropdown-menu dropdown-menu-right">
-                            <button class="dropdown-item" type="button">Sign in</button>
-                            <button class="dropdown-item" type="button">Sign up</button>
+                            {% if request.user.is_authenticated %}
+                            <a class="dropdown-item button" href="{% url 'logout' %}">Sign out</a>
+                            <a class="dropdown-item button" href="">Profil</a>
+                            {% else %}
+                            <a class="dropdown-item button" href="{% url 'login' %}">Sign in</a>
+                            <a class="dropdown-item button" href="">Sign up</a>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="btn-group mx-2">
