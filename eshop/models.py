@@ -30,6 +30,16 @@ class Product(models.Model):
     def fake_promo(self):
         return self.price * 1.09
 
+    @property
+    def reviews_rate(self):
+        if not self.reviews.all():
+            return 0
+        from django.db.models import Avg
+        return self.reviews.all().aggregate(mean=Avg('rate'))['mean']
+
+    @property
+    def likes_total(self):
+        return self.likes.filter(liked=True).count()
 
 class Image(models.Model):
     name = models.ImageField(null=True, blank=True, upload_to='images/products/')
