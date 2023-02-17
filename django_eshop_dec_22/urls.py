@@ -31,6 +31,7 @@ urlpatterns = [
     path('checkout', views.checkout, name="checkout"),
     path('search', views.search, name='search'),
     path('', include('myauth.urls')),
+    path('review/<int:id>', views.review, name="review"),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .models import Product, Category
+from .models import Product, Category, Review
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
 
@@ -108,3 +108,13 @@ def checkout(request):
 
 def login(request):
     return render(request, "eshop/login.html")
+
+def review(request, id):
+    if request.method == 'POST':
+        product = Product.objects.get(id=id)
+        rate = request.POST['rate']
+        comment = request.POST['comment']
+        name = request.POST['name']
+        email = request.POST['email']
+        Review(product=product, rate=rate, comment=comment, name=name, email=email).save()
+    return redirect('detail', id=id)

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 # Create your models here.
 class Product(models.Model):
@@ -82,13 +83,20 @@ class Customer(models.Model):
 
 
 class Review(models.Model):
-    rate = models.FloatField(null=False, blank=False)
+    rate = models.FloatField(null=False, blank=False, default=0, validators=[MinValueValidator(0), MaxValueValidator(5)])
     comment = models.TextField(null=True, blank=True)
     name = models.CharField(max_length=30, null=False, blank=False)
     email = models.CharField(max_length=30, null=False, blank=False)
     product = models.ForeignKey('Product', null=False, blank=False, 
         on_delete=models.CASCADE, related_name='reviews')
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+
+    @property
+    def user_photo(self):
+        customer = Customer.objects.get(user__email=self.email)
+        if customer and customer.avatar:
+            return customer.avatar.url
+        return ''
 
 class Like(models.Model):
     email = models.CharField(max_length=30, null=False, blank=False)
