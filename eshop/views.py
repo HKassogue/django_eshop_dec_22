@@ -8,16 +8,12 @@ from django.db.models import Count
 # Create your views here.
 def index(request):
     products = Product.objects.all()
-    categories = Category.objects.all()
     context =  {
         'products': products,
-        'categories': categories
     }
     return render(request, "eshop/index.html", context)
 
 def shop(request, cat='all'):
-    categories = Category.objects.all()
-    total = sum([category.products.count() for category in categories])
     page = request.GET.get('page', 1)
     perpage = request.GET.get('per', 6)
     sort = request.GET.get('sort', 'latest')
@@ -54,8 +50,6 @@ def shop(request, cat='all'):
 
     context = {
          'products' : produit,
-         'categories' :categories,
-         'total': total
     }
     return render(request,"eshop/shop.html", context)
 
@@ -68,7 +62,6 @@ def search(request):
     page = request.GET.get('page', 1)
     perpage = request.GET.get('per', 6)
     products = Product.objects.filter(name__icontains=query)
-    categories = Category.objects.all()
 
     paginator = Paginator(products, perpage)
     try:
@@ -80,19 +73,16 @@ def search(request):
 
     context = {
          'products' : products,
-         'categories' :categories,
     }
     return render(request,"eshop/shop.html", context)
 
 
 def detail(request, id):
     product = Product.objects.get(id=id)
-    categories = Category.objects.all()
     sim_products = Product.objects.filter(category=product.category).filter(active=True)
 
     context =  {
         'product': product,
-        'categories': categories,
         'sim_products': sim_products,
     }
     return render(request,"eshop/detail.html", context)
