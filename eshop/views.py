@@ -98,3 +98,22 @@ def checkout(request):
 
 def login(request):
     return render(request, "eshop/login.html")
+
+def edit_order_item(request, id_product):
+    cart = request.session.get('cart', {})
+    id_product = str(id_product)
+
+    if request.method == "POST":
+        quantity = int(request.POST['qty'])
+    else:
+        quantity = 1
+
+    if id_product in cart:
+        cart[id_product] += quantity
+        if cart[id_product] <= 0 :
+            del cart[id_product]
+    else:
+        cart[id_product] = quantity
+    request.session['cart'] = cart
+    request.session.modified = True
+    return redirect(request.META.get('HTTP_REFERER'))
