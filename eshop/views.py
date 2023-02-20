@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .models import Product, Category
+from .models import Product, Category, Order, Order_details, Customer
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
 
@@ -11,6 +11,22 @@ def index(request):
     context =  {
         'products': products,
     }
+
+    if request.user.is_authenticated:
+        customer = Customer.objects.get(user=request.user)
+        order = Order.objects.get(customer=customer, completed=False)
+        if order:
+            order_details = Order_details.filter(order=order)
+            cart = request.session.get('cart', {})
+            for item in order_details:
+                key = str(item.product.id)
+                if key in cart:
+                    cart[key] += item.quantity
+                else:
+                    cart[key] = item.quantity
+            request.session['cart'] = cart
+            request.session.modified = True
+
     return render(request, "eshop/index.html", context)
 
 def shop(request, cat='all'):
@@ -91,7 +107,13 @@ def contact(request):
     return render(request,"eshop/contact.html", {})
 
 def cart(request):
-    return render(request,"eshop/cart.html", {})
+    cart = request.session.get('cart', {})
+    products = []
+    quantities = []
+    for id, qty in cart.items():
+        products.append(Product.objects.get(id=int(id)))
+        quantities.append(qty)
+    return render(request,"eshop/cart.html", {'products': products, 'quantities': quantities})
 
 def checkout(request):
     return render(request,"eshop/checkout.html", {})

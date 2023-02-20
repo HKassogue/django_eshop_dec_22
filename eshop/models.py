@@ -110,6 +110,7 @@ class Order(models.Model):
         on_delete=models.SET_NULL, related_name='orders')
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
     products = models.ManyToManyField('Product', through='Order_details', related_name='orders')
+    completed = models.BooleanField(default=False, null=True, blank=False)
 
 class Order_details(models.Model):
     order = models.ForeignKey('Order', null=True, blank=False, on_delete=models.SET_NULL)
