@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .models import Product, Category
+from .models import Product, Category, Order, Order_details, Customer
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
 
@@ -8,16 +8,28 @@ from django.db.models import Count
 # Create your views here.
 def index(request):
     products = Product.objects.all()
-    categories = Category.objects.all()
     context =  {
         'products': products,
-        'categories': categories
     }
+
+    if request.user.is_authenticated:
+        customer = Customer.objects.get(user=request.user)
+        order = Order.objects.get(customer=customer, completed=False)
+        if order:
+            order_details = Order_details.filter(order=order)
+            cart = request.session.get('cart', {})
+            for item in order_details:
+                key = str(item.product.id)
+                if key in cart:
+                    cart[key] += item.quantity
+                else:
+                    cart[key] = item.quantity
+            request.session['cart'] = cart
+            request.session.modified = True
+
     return render(request, "eshop/index.html", context)
 
 def shop(request, cat='all'):
-    categories = Category.objects.all()
-    total = sum([category.products.count() for category in categories])
     page = request.GET.get('page', 1)
     perpage = request.GET.get('per', 6)
     sort = request.GET.get('sort', 'latest')
@@ -54,8 +66,6 @@ def shop(request, cat='all'):
 
     context = {
          'products' : produit,
-         'categories' :categories,
-         'total': total
     }
     return render(request,"eshop/shop.html", context)
 
@@ -68,7 +78,6 @@ def search(request):
     page = request.GET.get('page', 1)
     perpage = request.GET.get('per', 6)
     products = Product.objects.filter(name__icontains=query)
-    categories = Category.objects.all()
 
     paginator = Paginator(products, perpage)
     try:
@@ -80,19 +89,16 @@ def search(request):
 
     context = {
          'products' : products,
-         'categories' :categories,
     }
     return render(request,"eshop/shop.html", context)
 
 
 def detail(request, id):
     product = Product.objects.get(id=id)
-    categories = Category.objects.all()
     sim_products = Product.objects.filter(category=product.category).filter(active=True)
 
     context =  {
         'product': product,
-        'categories': categories,
         'sim_products': sim_products,
     }
     return render(request,"eshop/detail.html", context)
@@ -101,10 +107,35 @@ def contact(request):
     return render(request,"eshop/contact.html", {})
 
 def cart(request):
-    return render(request,"eshop/cart.html", {})
+    cart = request.session.get('cart', {})
+    products = []
+    quantities = []
+    for id, qty in cart.items():
+        products.append(Product.objects.get(id=int(id)))
+        quantities.append(qty)
+    return render(request,"eshop/cart.html", {'products': products, 'quantities': quantities})
 
 def checkout(request):
     return render(request,"eshop/checkout.html", {})
 
 def login(request):
     return render(request, "eshop/login.html")
+
+def edit_order_item(request, id_product):
+    cart = request.session.get('cart', {})
+    id_product = str(id_product)
+
+    if request.method == "POST":
+        quantity = int(request.POST['qty'])
+    else:
+        quantity = 1
+
+    if id_product in cart:
+        cart[id_product] += quantity
+        if cart[id_product] <= 0 :
+            del cart[id_product]
+    else:
+        cart[id_product] = quantity
+    request.session['cart'] = cart
+    request.session.modified = True
+    return redirect(request.META.get('HTTP_REFERER'))

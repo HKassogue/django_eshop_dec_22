@@ -31,6 +31,8 @@ urlpatterns = [
     path('checkout', views.checkout, name="checkout"),
     path('search', views.search, name='search'),
     path('', include('myauth.urls')),
+    path('__debug__/', include('debug_toolbar.urls')),
+    path('edit_cart_item/<int:id_product>', views.edit_order_item, name='edit_cart_item'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
