@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from .models import Product, Category, Order, Order_details, Customer
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
+from django.core.exceptions import ObjectDoesNotExist
 
 
 # Create your views here.
@@ -13,19 +14,22 @@ def index(request):
     }
 
     if request.user.is_authenticated:
-        customer = Customer.objects.get(user=request.user)
-        order = Order.objects.get(customer=customer, completed=False)
-        if order:
-            order_details = Order_details.filter(order=order)
-            cart = request.session.get('cart', {})
-            for item in order_details:
-                key = str(item.product.id)
-                if key in cart:
-                    cart[key] += item.quantity
-                else:
-                    cart[key] = item.quantity
-            request.session['cart'] = cart
-            request.session.modified = True
+        try:
+            customer = Customer.objects.get(user=request.user)
+            order = Order.objects.get(customer=customer, completed=False)
+            if order:
+                order_details = Order_details.filter(order=order)
+                cart = request.session.get('cart', {})
+                for item in order_details:
+                    key = str(item.product.id)
+                    if key in cart:
+                        cart[key] += item.quantity
+                    else:
+                        cart[key] = item.quantity
+                request.session['cart'] = cart
+                request.session.modified = True
+        except ObjectDoesNotExist:
+            pass
 
     return render(request, "eshop/index.html", context)
 

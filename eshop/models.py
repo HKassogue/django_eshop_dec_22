@@ -36,7 +36,7 @@ class Image(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='images')
 
     def __str__(self):
-        return f"{self.id}: {self.name}"
+        return f"{self.name}"
 
 
 class Category(models.Model):
@@ -55,7 +55,7 @@ class Category(models.Model):
         ordering = ['-created_at']
 
     def __str__(self) -> str:
-        return f" {self.id}: {self.name}"
+        return f"{self.name}"
 
 
 class MyUser(models.Model):
