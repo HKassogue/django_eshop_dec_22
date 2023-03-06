@@ -71,6 +71,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'eshop.context_processors.getCategories',
+                'eshop.context_processors.getDashboardData',
             ],
         },
     },
