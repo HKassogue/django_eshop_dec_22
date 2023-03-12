@@ -111,11 +111,15 @@ class Order(models.Model):
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
     products = models.ManyToManyField('Product', through='Order_details', related_name='orders')
     completed = models.BooleanField(default=False, null=True, blank=False)
+    @property
+    def order_details(self):
+       if self.Order_details.all():
+           return self.Order_details.all()
 
 class Order_details(models.Model):
     order = models.ForeignKey('Order', null=True, blank=False, on_delete=models.SET_NULL)
     product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
-    quantity = models.SmallIntegerField(default=1, null=True, blank=False)
+    ss = models.SmallIntegerField(default=1, null=True, blank=False)
     price = models.SmallIntegerField(default=1, null=True, blank=False)
 
 
@@ -165,3 +169,4 @@ class Faqs(models.Model):
     question = models.TextField(null=True, blank=True)
     answer = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+
