@@ -10,12 +10,15 @@ admin.site.register(Image)
 @admin.register(Arrival)
 class ArrivalsAdmin(admin.ModelAdmin):
     list_display = ['id', 'is_closed', 'closed_at', 'products']
+    search_fields = ['id']
     def products(self, obj):
         return obj.len()
 
 @admin.register(Arrival_details)
 class ArrivalDetails(admin.ModelAdmin):
     list_display = ['id', 'arrival', 'product', 'quantity']
+    autocomplete_fields = ['arrival', 'product']
+
     def products(self, obj):
         return obj.len()
 
@@ -36,7 +39,6 @@ class Coupon(admin.ModelAdmin):
     list_display = ['id', 'code','coupon_type', 'description', 'discount', 'max_usage', 'validity', 'is_valid', 'created_at']
     search_fields = ['code', 'id']
     list_filter = [ 'coupon_type', 'is_valid']
-    #autocomplete_fields = ['coupon_type']
 
     def arrival(self, obj): 
         return obj.code
@@ -69,8 +71,16 @@ class CategoryAdmin(admin.ModelAdmin):
 
 class ImageInline(admin.TabularInline):
     model = Image
-    fields = ['name', 'name_tag']
+    fields = ['name']
     extra = 0
+
+    def name_tag(self, obj):
+        return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
+                url = obj.name.url,
+                width=50,
+                height=50,
+            )
+        ) 
  
 
 @admin.register(Customer)
@@ -78,6 +88,8 @@ class CustomerAdmin(admin.ModelAdmin):
     list_display = ['id', 'user', 'avatar_tag', 'address', 'zipcode', 'city']
     search_fields = ['user', 'id']
     readonly_fields = ['avatar']
+    autocomplete_fields = ['user']
+
 
     
 
@@ -140,11 +152,22 @@ class OrderAdmin(admin.ModelAdmin):
 class OrderDetailsAdmin(admin.ModelAdmin):
     list_display = ['id', 'order', 'product', 'quantity', 'price']
     search_fields = ['id', 'order']
+    autocomplete_fields = ['product']
+
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ['id', 'rate', 'comment', 'name', 'email', 'product', 'created_at']
     list_filter = ['product']
+    autocomplete_fields = ['product']
+
+
+@admin.register(Payments)
+class PaymentsAdmin(admin.ModelAdmin):
+    list_display = ['id', 'ref', 'payed_at', 'mode', 'details', 'order']
+    list_filter = ['mode']
+    autocomplete_fields = ['order']
+
 
 
 
