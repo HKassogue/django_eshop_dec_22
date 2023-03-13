@@ -34,26 +34,26 @@
                     </thead>
                     <tbody class="align-middle">
                         {% for product, quantity in items %}
-                        <tr id="cart-list">
+                        <tr id="prd_{{ product.id }}">
                             <td class="align-middle"><img src="{{product.first_image}}" alt="{{product.name}}" style="width: 50px;"> {{product.name}}</td>
                             <td class="align-middle">${{product.price}}</td>
                             <td class="align-middle">
                                 <div class="input-group quantity mx-auto" style="width: 100px;">
                                     <div class="input-group-btn">
                                         <button class="btn btn-sm btn-primary btn-minus" >
-                                        <i class="fa fa-minus"></i>
+                                        <i  class="fa fa-minus increace"></i>
                                         </button>
                                     </div>
-                                    <input type="text" class="form-control form-control-sm bg-secondary border-0 text-center" value="{{quantity}}">
+                                    <input type="text" data ="{{ product.id }}" class="form-control form-control-sm bg-secondary border-0 text-center" value="{{quantity}}">
                                     <div class="input-group-btn">
                                         <button class="btn btn-sm btn-primary btn-plus">
-                                            <i class="fa fa-plus"></i>
+                                            <i class="fa fa-plus decreace"></i>
                                         </button>
                                     </div>
                                 </div>
                             </td>
-                            <td class="align-middle">${% widthratio product.price 1 quantity %}</td>
-                            <td class="align-middle"><button class="btn btn-sm btn-danger"><i class="fa fa-times"></i></button></td>
+                            <td class="align-middle">$ <span class="total_prd_{{ product.id }}">{% widthratio product.price 1 quantity %}</span> </td>
+                            <td class="align-middle"><button onclick="delete_item({{ product.id }})" class="btn btn-sm btn-danger"><i class="fa fa-times"></i></button></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -62,9 +62,9 @@
             <div class="col-lg-4">
                 <form class="mb-30" action="">
                     <div class="input-group">
-                        <input type="text" class="form-control border-0 p-4" placeholder="Coupon Code">
+                        <input id="coupon_code" type="text" class="form-control border-0 p-4" placeholder="Coupon Code">
                         <div class="input-group-append">
-                            <button class="btn btn-primary">Apply Coupon</button>
+                            <button class="btn btn-primary" type='button' id="coupons">Apply Coupon</button>
                         </div>
                     </div>
                 </form>
@@ -73,28 +73,233 @@
                     <div class="border-bottom pb-2">
                         <div class="d-flex justify-content-between mb-3">
                             <h6>Subtotal</h6>
-                            <h6>${{total}}</h6>
+                            <h6 >$ <span class="subtotal">{{total}}</span></h6>
                         </div>
                         <div class="d-flex justify-content-between mb-3">
                             <h6 class="font-weight-medium">Shipping</h6>
                             <h6 class="font-weight-medium">${{shipping}}</h6>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <h6 class="font-weight-medium">Reduction</h6>
-                            <h6 class="font-weight-medium">${{coupon}}</h6>
+                            <h6 class="font-weight-medium">Reduction <span id="perc_coubon"></span></h6>
+                            <h6 class="font-weight-medium">$<span id="reduction">{{coupon}}</span></h6>
                         </div>
                     </div>
                     <div class="pt-2">
                         <div class="d-flex justify-content-between mt-2">
                             <h5>Total</h5>
-                            <h5>${{total|add:shipping|add:coupon}}</h5>
+                            <h5 >$<span id="total">{{total|add:shipping|add:coupon}}</span></h5>
                         </div>
-                        <button class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</button>
+                        <button onclick = "proceedCheckout()" class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</button>
                     </div>
                 </div>
-            </div>
+            </div>>
         </div>
     </div>
     <!-- Cart End -->
+
+{% endblock %}
+{% block script %}
+<script>
+    $('.quantity button').on('click', function () {
+        var button = $(this);
+        var oldValue = button.parent().parent().find('input').val();
+        var qty = 0;
+        if (button.hasClass('btn-plus')) {
+            var newVal = parseFloat(oldValue) + 1;
+            qty = 1;
+        } else {
+            if (oldValue > 0) {
+                var newVal = parseFloat(oldValue) - 1;
+                qty = -1;
+            } else {
+                newVal = 0;
+            }
+        }
+        prd = button.parent().parent().find('input').attr('data')
+
+        get_ajax(prd,qty);
+        button.parent().parent().find('input').val(newVal);
+    });
+
+     function get_ajax(prd,qty){
+        $.ajax({
+            url: "{% url 'decreace_increase'  %}",
+            data: {qty : qty,id_product:prd},
+            dataType: 'json',
+            success: function(data) {
+                console.log(data)
+                console.log("lengrh: "+data)
+                if(data.status == "202"){
+                    var subtotal = ($(".subtotal").text()).replace(',','.')
+                    var reduction = 0
+                    console.log(data.data)
+                    console.log(subtotal)
+                    var perc = $("#perc_coubon").text().split(" ")[0]
+                    if(data.data > 0){
+                        $(".total_prd_"+prd).text(Number($(".total_prd_"+prd).text()) + data.data) 
+                        $(".subtotal").text(Number(subtotal) + data.data)
+                        subtotal = (Number(subtotal) + data.data) + 10
+                        reduction = Number($("#reduction").text())
+                        if(perc){ 
+                            if(subtotal > (subtotal * perc/100)){
+                                $("#reduction").text(subtotal * perc/100)
+                                $("#total").text((subtotal) - (subtotal * perc/100))
+                            }else{
+                                $("#reduction").text(0)
+                                $("#total").text((subtotal))
+                            }
+                        }else{
+                            if(subtotal > reduction ){
+                                $("#total").text(Number(subtotal - reduction)) 
+                            }else{
+                                $("#reduction").text(0)
+                                $("#total").text(subtotal) 
+                            }
+                        }
+                    }else{
+                        $(".total_prd_"+prd).text(Number($(".total_prd_"+prd).text()) - (data.data * -1)) 
+                        $(".subtotal").text(Number(subtotal) - (data.data * -1))
+
+                        subtotal = (Number(subtotal) - (data.data * -1)) + 10
+                        reduction = Number($("#reduction").text())
+
+                        if(perc){ 
+                            if(subtotal >  (subtotal * perc/100) ){
+                                $("#total").text(Number(subtotal -  (subtotal * perc/100))) 
+                            }else{
+                                $("#total").text(subtotal) 
+                                $("#reduction").text(0)
+                            }
+                        }else{
+                            if(subtotal > reduction ){
+                                $("#total").text(Number(subtotal - reduction)) 
+                            }else{
+                                $("#total").text(subtotal) 
+                                $("#reduction").text(0)
+                            }
+                        }
+                    }
+                }
+            },
+            error: function(error){
+                console.log(error)
+            }
+        });
+    }
+
+    $("#coupons").click(function(e) {
+        var coupon_code = $('#coupon_code').val();
+       if(coupon_code){
+            $.ajax({
+                url: "{% url 'coupons'  %}",
+                data: {code : coupon_code},
+                dataType: 'json',
+                success: function(data) {
+                    console.log(data)
+                    console.log(data.status)
+                    var subtotal = ($(".subtotal").text()).replace(',','.')
+                    subtotal = Number(subtotal) + 10
+                    if(data.status == "202"){
+                        if(data.data[0].coupon_type_id == 1) {
+                            if( subtotal > (subtotal * data.data[0].discount)/100){
+                                $("#reduction").text((subtotal * data.data[0].discount)/100)
+                                $("#total").text(subtotal - ((subtotal * data.data[0].discount)/100))
+                                $("#perc_coubon").text(data.data[0].discount+" %")
+                            }else{
+                                $.notify("Impossible le total à payer doit etre supérieur à la reduction", "error");
+                            }
+                        }else if(data.data[0].coupon_type_id == 2){
+                            if(subtotal > data.data[0].discount){
+                                $("#reduction").text(data.data[0].discount)
+                                $("#total").text(subtotal - data.data[0].discount)
+                                $("#perc_coubon").text("")
+                            }else{
+                                $.notify("Impossible le total à payer doit etre supérieur à la reduction", "error");
+                            }
+                        }
+                    }else{
+                        $.notify("Ce coupon n'est plus d'actualité ou n'existe pas.", "error");
+                    }
+                },
+                error: function(error){
+                    console.log(error)
+                }
+            });
+        }else{
+            console.log("coupon vide!");
+            $.notify("La valuer du  coupon code est vide.", "error");
+        }
+    })
+
+    function delete_item(prd) {
+        var coupon_code = $('#coupon_code').val();
+        $.ajax({
+            url: "{% url 'del_in_cart'  %}",
+            data: {id_product:prd},
+            dataType: 'json',
+            success: function(data) {
+                console.log(data)
+                console.log(data.status)
+                if(data.status == "202"){
+                    if(data.data){
+                        console.log("#prd_"+data.data)
+                        var subtotal = ($(".subtotal").text()).replace(',','.')
+                        var subtotal = Number(subtotal) - $(".total_prd_"+prd).text()
+                        var perc = $("#perc_coubon").text().split(" ")[0]
+                        var reduction = Number($("#reduction").text())
+                        $(".subtotal").text(subtotal)
+                        subtotal += 10
+                        if(perc){ 
+                            if(subtotal > (subtotal * perc/100)){
+                                $("#reduction").text(subtotal * perc/100)
+                                $("#total").text((subtotal) - (subtotal * perc/100))
+                            }else{
+                                $("#reduction").text(0)
+                                $("#total").text((subtotal))
+                            }
+                        }else{
+                            if(subtotal > reduction){
+                                $("#reduction").text(reduction)
+                                $("#total").text((subtotal + 10) - reduction )
+                            }else{
+                                $("#reduction").text(0)
+                                $("#total").text((subtotal))
+                            }
+                        }
+                        
+                        $( "#prd_"+data.data).remove();
+                    }
+                    //location.reload();
+                }
+            },
+            error: function(error){
+                console.log(error)
+            }
+        });
+    }
+
+    function proceedCheckout(prd) {
+        var coupon_code = $('#coupon_code').val();
+        $.ajax({
+            url: "{% url 'proceedCheckout'  %}",
+            data: {code : coupon_code},
+            dataType: 'json',
+            success: function(data) {
+                console.log(data)
+                console.log(data.status)
+                if(data.status == "202"){
+                    window.location.assign("{% url 'checkout'  %}")
+                }else if(data.status = "401"){
+                    $.notify("Impossible panier vide.", "error");
+                }else if(data.status = "402"){
+                    $.notify("Impossible vous n'été  pas connecter.", "error");
+                }
+            },
+            error: function(error){
+                console.log(error)
+            }
+        });
+    }
+</script>
 
 {% endblock %}

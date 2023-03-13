@@ -296,6 +296,10 @@
 
     <!-- Template Javascript -->
     <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'js/notify.min.js' %}"></script>
+    {% block script %}
+    {% endblock %}
+
 
     <script>
         $('.addto-cart').on('click', function(e) {

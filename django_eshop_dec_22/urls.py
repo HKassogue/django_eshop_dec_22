@@ -28,7 +28,11 @@ urlpatterns = [
     path('detail/<int:id>', views.detail, name="detail"),
     path('contact', views.contact, name="contact"),
     path('cart', views.cart, name="cart"),
+    path('cart/decreace_increase', views.decreace_increase, name="decreace_increase"),
+    path('coupons', views.coupons, name="coupons"),
+    path('del_in_cart', views.del_in_cart, name="del_in_cart"),
     path('checkout', views.checkout, name="checkout"),
+    path('proceedCheckout', views.proceedCheckout, name="proceedCheckout"),
     path('search', views.search, name='search'),
     path('', include('myauth.urls')),
     path('__debug__/', include('debug_toolbar.urls')),
@@ -37,5 +41,4 @@ urlpatterns = [
     path('add_to_cart/',views.add_to_cart, name="add_to_cart")
     # path('products/<int:product_id>/like/', views.like_product, name='like_product'),
 ]
-
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
