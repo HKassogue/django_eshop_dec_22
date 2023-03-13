@@ -23,7 +23,9 @@ from django.conf import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='home'),
-    path('shop', views.shop, name='shop'),
+    path('shop/filtered_products', views.shop, name='filtered_products'),
+    path('shop/filters', views.check, name='filters'),
+    path('shop/', views.shop, name='shop'),
     path('shop/<slug:cat>', views.shop, name='shop'),
     path('detail/<int:id>', views.detail, name="detail"),
     path('contact', views.contact, name="contact"),
@@ -31,8 +33,11 @@ urlpatterns = [
     path('checkout', views.checkout, name="checkout"),
     path('search', views.search, name='search'),
     path('', include('myauth.urls')),
+    path('admin/admin/', include('admin_volt.urls')),
+
     path('__debug__/', include('debug_toolbar.urls')),
-    path('edit_cart_item/<int:id_product>', views.edit_order_item, name='edit_cart_item'),
+    path('edit_cart_item/<int:id_product>',
+         views.edit_order_item, name='edit_cart_item'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
