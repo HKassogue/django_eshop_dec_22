@@ -1,6 +1,13 @@
+from django.conf import settings
+from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .models import Product, Category, Order, Order_details, Customer
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views import View
+
+from eshop.forms import CheckOutForm
+from .models import Delivery, Payments, Product, Category, Order, Order_details, Customer
+from.context_processors import *
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
@@ -137,6 +144,58 @@ def checkout(request):
         quantities.append(qty)
         total += qty * product.price
     return render(request,"eshop/checkout.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping})
+    # if request.user.is_authenticated:
+    #     customer = Customer.objects.get(user=request.user)
+    #     order = Order.objects.get(customer=customer, completed=False)
+    if request.POST == 'POST':
+        #order = Order.objects.get(customer=customer, completed=False)
+        token = request.POST.get('stripeToken')
+        #chargeID = stripe_payment(settings.STRIPE_SECRET_KEY,token, order.get_total(),str(order.id))
+        form = CheckOutForm(request.POST)
+        if form.is_valid():
+            address = form.cleaned_data.get('address')
+            mobile = form.cleaned_data.get('mobile')
+            country = form.cleaned_data.get('country')
+            city = form.cleaned_data.get('city')
+            state = form.cleaned_data.get('state')
+            zipcode = form.cleaned_data.get('zipcode')
+            delivery = Delivery(
+                address = address,
+                mobile = mobile,
+                country = country,
+                city = city,
+                price = 0,
+                delivery_by = "",
+                state = state,
+                zipcode = zipcode,
+            )
+            delivery.save()
+            return render(request, 'eshop/shop.html')
+        else:
+            message = "Il y'a une erreur"
+            form = CheckOutForm()
+            context = {
+                'ms': message,
+                'form':form
+            }
+            return render(request,"eshop/checkout.html", context)
+    else:
+        form = CheckOutForm()
+        context = {
+            'STRIPE_PUBLIC_KEY': settings.STRIPE_PUBLIC_KEY,
+            #'order': order,
+            'form':form
+        }
+    return render(request,"eshop/checkout.html", context)
+    # try:
+    #     customer = Customer.objects.get(user=request.user)
+    #     order = Order.objects.get(customer=customer, completed=False)
+        
+        
+    # except ObjectDoesNotExist:
+    #     pass
+    
+    
 
 def login(request):
     return render(request, "eshop/login.html")

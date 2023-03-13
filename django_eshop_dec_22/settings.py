@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'eshop',
     'myauth',
+    'django_countries',
     "debug_toolbar",
 ]
 
@@ -149,3 +150,6 @@ LOGOUT_REDIRECT_URL = reverse_lazy('home')
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+STRIPE_PUBLIC_KEY = 'pk_test_51Mi5gCABvWlBXBTKuiw7XRZmfwWxk0TZc0jhF8S4HT56WbVXwHcC7xXjBhWzXUBa9tZoHdaV9mclnKAckiavK3Tg00G3RKVAuw'
+STRIPE_SECRET_KEY = 'sk_test_51Mi5gCABvWlBXBTKZlqOV8uFAghB01BZecwnEmm4ppvb34jKJOeBB3kkWLXzyFiZzMMFlFm9ec6RCgFWPGvmMbYW00rCAiTz5q'
