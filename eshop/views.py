@@ -1,16 +1,35 @@
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
-from .models import Product, Category, Order, Order_details, Customer
+from datetime import datetime
+from django.shortcuts import get_object_or_404, render, redirect
+from django.http import HttpResponse, JsonResponse
+from .models import Arrival, Arrival_details, Like, Product, Order, Order_details, Customer
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
+from django.views.decorators.http import require_POST
+
 
 
 # Create your views here.
 def index(request):
     products = Product.objects.all()
-    context =  {
+    
+    current_time = datetime.now()
+    upcoming_arrivals = Arrival.objects.filter(closed_at__gt=current_time, is_closed=False)
+    produits = []
+    for arrival in upcoming_arrivals:
+        arrival_details = arrival.arrival_details_set.all()
+        for detail in arrival_details:
+            product = detail.product
+            quanti = detail.quantity
+            image = product.first_image
+            price = product.price
+            day = arrival.closed_at
+            nam = product.name
+            produits.append((product, quanti, image, price,nam,day))
+    context =  { 'produits': produits,
         'products': products,
+        
+        
     }
 
     if request.user.is_authenticated:
@@ -69,7 +88,7 @@ def shop(request, cat='all'):
         produit = paginator.page(paginator.num_pages)
 
     context = {
-         'products' : produit,
+        'products' : produit,
     }
     return render(request,"eshop/shop.html", context)
 
@@ -92,7 +111,7 @@ def search(request):
         products = paginator.page(paginator.num_pages)
 
     context = {
-         'products' : products,
+        'products' : products,
     }
     return render(request,"eshop/shop.html", context)
 
@@ -100,6 +119,7 @@ def search(request):
 def detail(request, id):
     product = Product.objects.get(id=id)
     sim_products = Product.objects.filter(category=product.category).filter(active=True)
+    
 
     context =  {
         'product': product,
@@ -127,6 +147,7 @@ def cart(request):
 def checkout(request):
     return render(request,"eshop/checkout.html", {})
 
+
 def login(request):
     return render(request, "eshop/login.html")
 
@@ -148,3 +169,40 @@ def edit_order_item(request, id_product):
     request.session['cart'] = cart
     request.session.modified = True
     return redirect(request.META.get('HTTP_REFERER'))
+
+def like_product(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    email = request.POST.get('email') # récupérer l'adresse e-mail de l'utilisateur connecté ou d'un cookie
+    liked = request.POST.get('liked', 'true') == 'true'
+    Like.objects.update_or_create(email=email, product=product, defaults={'liked': liked})
+    like_count = product.likes.filter(liked=True).count()
+    return JsonResponse({'liked': liked, 'like_count': like_count})
+
+def like(request):
+    if request.method == 'POST':
+        product_id = request.POST.get('product.id')
+        email = request.POST.get('email')
+        
+        # Vérifiez si l'utilisateur a déjà aimé le produit
+        like, created = Like.objects.get_or_create(product_id=product_id, email=email)
+        
+        if not created:
+            like.liked = not like.liked
+            like.save()
+            
+        # Mettre à jour le nombre de likes dans le modèle de produit
+        product = Like.objects.get(id=product_id)
+        product.likes = product.likes_count()
+        product.save()
+        
+        # Retourner une réponse JSON avec le nombre de likes mis à jour
+        data = {'likes': product.likes}
+        return JsonResponse(data)
+@require_POST
+def add_to_cart(request, product_id):
+    product = Product.objects.get(id=product_id)
+    cart = request.session.get('cart', {})
+    cart[product_id] = cart.get(product_id, 0) + 1
+    request.session['cart'] = cart
+    return redirect('cart')
+

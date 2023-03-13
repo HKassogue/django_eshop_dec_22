@@ -33,6 +33,9 @@ urlpatterns = [
     path('', include('myauth.urls')),
     path('__debug__/', include('debug_toolbar.urls')),
     path('edit_cart_item/<int:id_product>', views.edit_order_item, name='edit_cart_item'),
+    path('like',views.like,name="like"),
+    path('add_to_cart/',views.add_to_cart, name="add_to_cart")
+    # path('products/<int:product_id>/like/', views.like_product, name='like_product'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
