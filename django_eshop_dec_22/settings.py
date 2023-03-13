@@ -71,6 +71,12 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'eshop.context_processors.getCategories',
+                'eshop.context_processors.getDashboardData',
+                'eshop.context_processors.getCountOrderByDay',
+                'eshop.context_processors.getCountOrderByMonth',
+                'eshop.context_processors.getCountLike', 
+                'eshop.context_processors.getCountReview'
+                
             ],
         },
     },
@@ -89,7 +95,7 @@ DATABASES = {
         'USER': 'root',
         'PASSWORD': '',
         'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'PORT': '8889',
     }
 }
 
