@@ -1,6 +1,7 @@
 import datetime
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.safestring import mark_safe
 
 # Create your models here.
 class Product(models.Model):
@@ -36,6 +37,14 @@ class Image(models.Model):
     name = models.ImageField(null=True, blank=True, upload_to='images/products/')
     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='images')
 
+    def name_tag(self):
+        return mark_safe('<img src="/media/{url}" width="{width}" height={height} />'.format(
+                url = self.avatar.name,
+                width=50,
+                height=50,
+            )
+        ) 
+
     def __str__(self):
         return f"{self.name}"
 
@@ -63,6 +72,16 @@ class MyUser(models.Model):
     user = models.OneToOneField(User, null=False, blank=False, on_delete=models.CASCADE)
     avatar = models.ImageField(upload_to='images/users/', null=True, blank=True)
     
+    def avatar_tag(self):
+        return mark_safe('<img src="/media/{url}" width="{width}" height={height} />'.format(
+                url = self.avatar.name,
+                width=50,
+                height=50,
+            )
+        ) 
+    def __str__(self):
+        return f"{self.user.username}"
+
 
 class Customer(models.Model):
     user = models.OneToOneField(User, null=False, blank=False, on_delete=models.CASCADE)
@@ -70,6 +89,16 @@ class Customer(models.Model):
     address = models.CharField(max_length=30, null=True, blank=True)
     zipcode = models.CharField(max_length=6, null=True, blank=True)
     city = models.CharField(max_length=30, null=True, blank=True)
+
+    def avatar_tag(self):
+        return mark_safe('<img src="/media/{url}" width="{width}" height={height} />'.format(
+                url = self.avatar.name,
+                width=50,
+                height=50,
+            )
+        ) 
+    def __str__(self):
+        return f"{self.user.username}"
 
 
 class Review(models.Model):
@@ -87,10 +116,16 @@ class Like(models.Model):
     product = models.ForeignKey('Product', null=False, blank=False, 
         on_delete=models.CASCADE, related_name='likes')
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    def __str__(self):
+        return f"{self.id}"
+
 
 
 class Coupon_type(models.Model):
     name = models.CharField(max_length=30, null=False, blank=False, unique=True)
+    def __str__(self):
+        return f"{self.name}"
+
 
 class Coupon(models.Model):
     code = models.CharField(max_length=30, null=False, blank=False, unique=True)
@@ -101,6 +136,9 @@ class Coupon(models.Model):
     validity = models.DateTimeField(null=False, blank=False)
     is_valid = models.BooleanField(default=True, null=False, blank=False)
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    def __str__(self):
+        return f"{self.code}"
+
 
 
 class Order(models.Model):
@@ -117,11 +155,19 @@ class Order(models.Model):
        if self.Order_details.all():
            return self.Order_details.all()
 
+    def __str__(self):
+        return f"{self.id}: {self.reference}"
+
+
 class Order_details(models.Model):
     order = models.ForeignKey('Order', null=True, blank=False, on_delete=models.SET_NULL)
     product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
     ss = models.SmallIntegerField(default=1, null=True, blank=False)
     price = models.SmallIntegerField(default=1, null=True, blank=False)
+    
+    def __str__(self):
+        return f"{self.id}"
+
 
 
 class Arrival(models.Model):
@@ -129,12 +175,15 @@ class Arrival(models.Model):
     closed_at = models.DateTimeField(null=True, blank=True)
     is_closed = models.BooleanField(default=False, null=False, blank=False)
     products = models.ManyToManyField('Product', through='Arrival_details', related_name='+')
-
+    def __str__(self):
+        return f"{self.id}"
+    
 class Arrival_details(models.Model):
     arrival = models.ForeignKey('Arrival', null=True, blank=False, on_delete=models.SET_NULL)
     product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
     quantity = models.SmallIntegerField(default=1, null=True, blank=True)
-
+    def __str__(self):
+        return f"{self.id}"
 
 class Delivery(models.Model):
     address = models.CharField(max_length=30, null=False, blank=False)
@@ -146,6 +195,8 @@ class Delivery(models.Model):
         related_name='deliveries')
     delivered_by = models.ForeignKey('MyUser', null=True, blank=True, on_delete=models.SET_NULL, 
         related_name='+')
+    def __str__(self):
+        return f"{self.id}"
 
 class Payments(models.Model):
     ref = models.CharField(max_length=30, null=False, blank=False, unique=True)
@@ -153,6 +204,10 @@ class Payments(models.Model):
     mode = models.CharField(max_length=30, default='Liquidity', null=False, blank=False)
     details = models.TextField(null=True, blank=True)
     order = models.OneToOneField('Order', on_delete=models.PROTECT, related_name='payment')
+
+    def __str__(self):
+        return f"{self.ref}"
+
 
 
 class Alerts(models.Model):
@@ -163,6 +218,9 @@ class Alerts(models.Model):
     traited_at = models.DateTimeField(null=False, blank=False)
     user = models.ForeignKey(User, null=False, blank=False, on_delete=models.PROTECT, 
         related_name='+')
+    
+    def __str__(self):
+        return f"{self.id}"
 
 
 class Faqs(models.Model):
@@ -171,3 +229,5 @@ class Faqs(models.Model):
     answer = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
 
+    def __str__(self):
+        return f"{self.question}"
