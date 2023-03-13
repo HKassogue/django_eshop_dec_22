@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+from django.urls import reverse_lazy
 from pathlib import Path
 import os
 
@@ -94,9 +95,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'django_eshop_dec_22',
         'USER': 'root',
-        'PASSWORD': 'root',
+        'PASSWORD': '',
         'HOST': '127.0.0.1',
-        'PORT': '8889',
+        'PORT': '3306',
     }
 }
 
@@ -149,7 +150,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-from django.urls import reverse_lazy
 LOGIN_REDIRECT_URL = reverse_lazy('home')
 LOGOUT_REDIRECT_URL = reverse_lazy('home')
 

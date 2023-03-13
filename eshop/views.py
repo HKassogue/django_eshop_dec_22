@@ -10,10 +10,14 @@ from django.views import View
 from eshop.forms import CheckOutForm
 from .models import Delivery, Payments, Product, Category, Order, Order_details, Customer
 from.context_processors import *
+from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from .models import Product, Category, Order, Order_details, Customer, Filter_Price
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
-from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -65,20 +69,25 @@ def index(request):
 
     return render(request, "eshop/index.html", context)
 
+
 def shop(request, cat='all'):
     page = request.GET.get('page', 1)
     perpage = request.GET.get('per', 6)
     sort = request.GET.get('sort', 'latest')
     query = request.GET.get('q', '')
+# filter_price get
+    filter_Price = Filter_Price.objects.all()
 
     if cat == 'all':
         if not query:
             if sort == 'latest':
                 products = Product.objects.all()
             elif sort == 'popular':
-                products = Product.objects.all().annotate(nbr_likes=Count('likes')).order_by('-nbr_likes')
+                products = Product.objects.all().annotate(
+                    nbr_likes=Count('likes')).order_by('-nbr_likes')
             else:
-                products = Product.objects.all().annotate(nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
+                products = Product.objects.all().annotate(
+                    nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
         else:
             products = Product.objects.filter(name__icontains=query)
     else:
@@ -86,11 +95,15 @@ def shop(request, cat='all'):
             if sort == 'latest':
                 products = Product.objects.filter(category__slug=cat)
             elif sort == 'popular':
-                products = Product.objects.filter(category__slug=cat).annotate(nbr_likes=Count('likes')).order_by('-nbr_likes')
+                products = Product.objects.filter(category__slug=cat).annotate(
+                    nbr_likes=Count('likes')).order_by('-nbr_likes')
             else:
-                products = Product.objects.filter(category__slug=cat).annotate(nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
+                products = Product.objects.filter(category__slug=cat).annotate(
+                    nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
+
         else:
-            products = Product.objects.filter(category__slug=cat).filter(name__icontains=query)
+            products = Product.objects.filter(
+                category__slug=cat).filter(name__icontains=query)
 
     paginator = Paginator(products, perpage)
     try:
@@ -101,9 +114,10 @@ def shop(request, cat='all'):
         produit = paginator.page(paginator.num_pages)
 
     context = {
-        'products' : produit,
+        'products': produit,
+        'filter_Price': filter_Price,
     }
-    return render(request,"eshop/shop.html", context)
+    return render(request, "eshop/shop.html", context)
 
 @csrf_exempt
 def product(request):
@@ -133,24 +147,38 @@ def search(request):
         products = paginator.page(paginator.num_pages)
 
     context = {
-        'products' : products,
+         'products' : products,
     }
-    return render(request,"eshop/shop.html", context)
+    return render(request, "eshop/shop.html", context)
+
+
+@csrf_exempt
+def check(request):
+    if request.method == "GET":
+        price = int(request.GET.get('price'))
+
+    product = Product.objects.filter(price__lte=price)
+    data = list(product.values())
+    for i in range(len(product)):
+        data[i]['first_image'] = product[i].first_image
+
+    return JsonResponse(data, safe=False)
 
 
 def detail(request, id):
     product = Product.objects.get(id=id)
     sim_products = Product.objects.filter(category=product.category).filter(active=True)
-    
 
-    context =  {
+    context = {
         'product': product,
         'sim_products': sim_products,
     }
-    return render(request,"eshop/detail.html", context)
+    return render(request, "eshop/detail.html", context)
+
 
 def contact(request):
-    return render(request,"eshop/contact.html", {})
+    return render(request, "eshop/contact.html", {})
+
 
 def cart(request):
     cart = request.session.get('cart', {})
@@ -221,10 +249,15 @@ def add_delivery(request):
                 )
                 delivery.save()
                 return render(request, 'eshop/shop.html')    
+    return render(request, "eshop/cart.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping, 'coupon': coupon})
+
+def checkout(request):
+    return render(request,"eshop/checkout.html", {})
 
 
 def login(request):
     return render(request, "eshop/login.html")
+
 
 def edit_order_item(request, id_product):
     cart = request.session.get('cart', {})
@@ -237,7 +270,7 @@ def edit_order_item(request, id_product):
 
     if id_product in cart:
         cart[id_product] += quantity
-        if cart[id_product] <= 0 :
+        if cart[id_product] <= 0:
             del cart[id_product]
     else:
         cart[id_product] = quantity
@@ -402,3 +435,39 @@ def add_to_cart(request, product_id):
     request.session['cart'] = cart
     return redirect('cart')
 
+
+
+# def filtered_products(request):
+#     min_price = request.GET.get('min_price')
+#     max_price = request.GET.get('max_price')
+
+#     # filtrer les produits en conséquence
+#     products = Product.objects.all()
+#     if min_price and max_price:
+#         products = products.filter(price=min_price)
+
+#     # passer les produits filtrés au contexte de la vue
+#     context = {'products': products}
+#     return render(request, 'products.html', context)
+
+def filtered_products(request):
+    query = request.GET.get('q', '')
+    if not query:
+        return redirect('shop')
+
+    page = request.GET.get('page', 1)
+    perpage = request.GET.get('per', 6)
+    products = Product.objects.filter(price__icontains=query)
+
+    paginator = Paginator(products, perpage)
+    try:
+        products = paginator.page(page)
+    except PageNotAnInteger:
+        products = paginator.page(1)
+    except EmptyPage:
+        products = paginator.page(paginator.num_pages)
+
+    context = {
+        'products': products,
+    }
+    return render(request, "eshop/shop.html", context)
