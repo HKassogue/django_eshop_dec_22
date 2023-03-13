@@ -32,6 +32,7 @@ urlpatterns = [
     path('coupons', views.coupons, name="coupons"),
     path('del_in_cart', views.del_in_cart, name="del_in_cart"),
     path('checkout', views.checkout, name="checkout"),
+    path('proceedCheckout', views.proceedCheckout, name="proceedCheckout"),
     path('search', views.search, name='search'),
     path('', include('myauth.urls')),
     path('__debug__/', include('debug_toolbar.urls')),

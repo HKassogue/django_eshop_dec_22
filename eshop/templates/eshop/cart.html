@@ -89,7 +89,7 @@
                             <h5>Total</h5>
                             <h5 >$<span id="total">{{total|add:shipping|add:coupon}}</span></h5>
                         </div>
-                        <button class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</button>
+                        <button onclick = "proceedCheckout()" class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</button>
                     </div>
                 </div>
             </div>>
@@ -200,14 +200,13 @@
                     var subtotal = ($(".subtotal").text()).replace(',','.')
                     subtotal = Number(subtotal) + 10
                     if(data.status == "202"){
-                        $('#coupon_code').val("");
                         if(data.data[0].coupon_type_id == 1) {
                             if( subtotal > (subtotal * data.data[0].discount)/100){
                                 $("#reduction").text((subtotal * data.data[0].discount)/100)
                                 $("#total").text(subtotal - ((subtotal * data.data[0].discount)/100))
                                 $("#perc_coubon").text(data.data[0].discount+" %")
                             }else{
-                                $.notify("Imposssible le total à payer doit etre supérieur à la reduction", "error");
+                                $.notify("Impossible le total à payer doit etre supérieur à la reduction", "error");
                             }
                         }else if(data.data[0].coupon_type_id == 2){
                             if(subtotal > data.data[0].discount){
@@ -215,7 +214,7 @@
                                 $("#total").text(subtotal - data.data[0].discount)
                                 $("#perc_coubon").text("")
                             }else{
-                                $.notify("Imposssible le total à payer doit etre supérieur à la reduction", "error");
+                                $.notify("Impossible le total à payer doit etre supérieur à la reduction", "error");
                             }
                         }
                     }else{
@@ -278,9 +277,29 @@
             }
         });
     }
+
+    function proceedCheckout(prd) {
+        var coupon_code = $('#coupon_code').val();
+        $.ajax({
+            url: "{% url 'proceedCheckout'  %}",
+            data: {code : coupon_code},
+            dataType: 'json',
+            success: function(data) {
+                console.log(data)
+                console.log(data.status)
+                if(data.status == "202"){
+                    window.location.assign("{% url 'checkout'  %}")
+                }else if(data.status = "401"){
+                    $.notify("Impossible panier vide.", "error");
+                }else if(data.status = "402"){
+                    $.notify("Impossible vous n'été  pas connecter.", "error");
+                }
+            },
+            error: function(error){
+                console.log(error)
+            }
+        });
+    }
 </script>
-
-
-
 
 {% endblock %}

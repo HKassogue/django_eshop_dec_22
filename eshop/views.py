@@ -7,6 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from datetime import datetime
 
 
 # Create your views here.
@@ -19,9 +20,10 @@ def index(request):
     if request.user.is_authenticated:
         try:
             customer = Customer.objects.get(user=request.user)
-            order = Order_details.objects.get(customer=customer, completed=False)
+            order = Order.objects.filter(customer_id=customer.id, completed=False).first()
+            
             if order:
-                order_details = Order_details.get(order=order)
+                order_details = Order_details.objects.get(order_id=order.id)
                 cart = request.session.get('cart', {})
                 for item in order_details:
                     key = str(item.product.id)
@@ -213,7 +215,6 @@ def del_in_cart(request):
 
 @csrf_exempt
 def coupons(request):
-    from datetime import datetime
     if request.method == "GET":
         jsonResponse = {}
         code_coupon = request.GET.get('code')
@@ -228,3 +229,60 @@ def coupons(request):
                "status":"404","message":"Not found!", 
             }
     return JsonResponse(jsonResponse)
+
+@csrf_exempt
+def proceedCheckout(request):
+    cart = request.session.get('cart', {})
+    order_id = 0
+    if cart:
+        customer = Customer.objects.get(user=request.user)
+        if customer :
+            reference = generate_code()
+            order = Order(reference=reference,customer=customer)
+            if request.method == "GET":
+                code_coupon = request.GET.get('code')
+                coupon = Coupon.objects.filter(code = code_coupon).filter(validity__gte=datetime.now()).filter(is_valid = True).filter(max_usage__gt=0).first()
+                if coupon:
+                    order.coupon_id = coupon.id
+                    coupon.max_usage = coupon.max_usage - 1
+                    coupon.save()
+
+            order.save()
+            order_id = order.id
+            for id, qty in cart.items():
+                id = int(id)
+                if id > 0:
+                    product = Product.objects.get(id=id)
+                    if product.stock > qty:
+                        order_detail = Order_details(order_id= order.id,product_id=product.id,quantity=qty,price = product.price)
+                        order_detail.save()
+                        product.stock = product.stock - qty
+                        product.save()
+
+            del request.session['cart']
+            request.session.modified = True
+            jsonResponse = {
+                "status":"202","message":"update succefull!","data" : order_id
+            }
+        else:
+            jsonResponse = {
+                "status":"402","message":"Customer not connect!","data" : order_id
+            }
+    else:
+        jsonResponse = {
+            "status":"401","message":"Cart empty!","data" : order_id
+        }
+    return JsonResponse(jsonResponse)
+
+
+
+import secrets
+import string
+
+def generate_code():
+    alphabet = string.ascii_uppercase + string.ascii_lowercase + string.digits
+    while True:
+        code = ''.join(secrets.choice(alphabet) for i in range(5))
+        if not Order.objects.filter(reference=code).exists():
+            break
+    return code
