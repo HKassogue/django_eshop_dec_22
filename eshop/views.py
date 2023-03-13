@@ -3,6 +3,13 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse, JsonResponse
 from .models import Arrival, Arrival_details, Like, Product, Order, Order_details, Customer
 from .models import Product, Category, Order, Order_details, Customer,Coupon
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views import View
+from eshop.forms import CheckOutForm
+from .models import Delivery, Payments, Product, Category, Order, Order_details, Customer
+from.context_processors import *
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
@@ -162,7 +169,58 @@ def cart(request):
     return render(request,"eshop/cart.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping, 'coupon': coupon})
 
 def checkout(request):
-    return render(request,"eshop/checkout.html", {})
+    form = CheckOutForm()
+    cart = request.session.get('cart', {})
+    products = []
+    quantities = []
+    total = 0
+    shipping = 10
+    coupon = 0
+    for id, qty in cart.items():
+        product = Product.objects.get(id=int(id))
+        products.append(product)
+        quantities.append(qty)
+        total += qty * product.price
+        context = {
+            
+            'items': zip(products,quantities),
+            'total': total,
+            'shipping': shipping,
+            'form':form
+        }
+    return render(request,"eshop/checkout.html", context)
+def add_delivery(request):
+    if request.user.is_authenticated:
+        customer = Customer.objects.get(user=request.user)
+        order = Order.objects.get(customer=customer, completed=False)
+        context = {
+            'STRIPE_PUBLIC_KEY': settings.STRIPE_PUBLIC_KEY,
+            'order': order,
+        }
+        if request.POST == 'POST':
+            order = Order.objects.get(customer=customer, completed=False)
+            token = request.POST.get('stripeToken')
+            chargeID = stripe_payment(settings.STRIPE_SECRET_KEY,token, order.get_total(),str(order.id))
+            form = CheckOutForm(request.POST)
+            if form.is_valid():
+                address = form.cleaned_data.get('address')
+                mobile = form.cleaned_data.get('mobile')
+                country = form.cleaned_data.get('country')
+                city = form.cleaned_data.get('city')
+                state = form.cleaned_data.get('state')
+                zipcode = form.cleaned_data.get('zipcode')
+                delivery = Delivery(
+                    address = address,
+                    mobile = mobile,
+                    country = country,
+                    city = city,
+                    price = order.products.price,
+                    delivery_by = chargeID,
+                    state = state,
+                    zipcode = zipcode,
+                )
+                delivery.save()
+                return render(request, 'eshop/shop.html')    
 
 
 def login(request):

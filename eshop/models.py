@@ -2,6 +2,7 @@ import datetime
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
+from django_countries.fields import CountryField
 
 # Create your models here.
 class Product(models.Model):
@@ -150,6 +151,12 @@ class Order(models.Model):
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
     products = models.ManyToManyField('Product', through='Order_details', related_name='orders')
     completed = models.BooleanField(default=False, null=True, blank=False)
+    
+    def get_total (self):
+        total = 0
+        for order_item in self.products.all():
+            total += order_item.get_total_price()
+        return total
     @property
     def order_details(self):
        if self.Order_details.all():
@@ -167,6 +174,9 @@ class Order_details(models.Model):
     
     def __str__(self):
         return f"{self.id}"
+    
+    def get_total_price (self):
+        return self.quantity * self.price
 
 
 
@@ -187,6 +197,8 @@ class Arrival_details(models.Model):
 
 class Delivery(models.Model):
     address = models.CharField(max_length=30, null=False, blank=False)
+    mobile = models.CharField(max_length=20, blank=True, null=True)
+    country = CountryField(multiple=False, blank=True, null=True)
     zipcode = models.CharField(max_length=30, null=False, blank=False)
     city = models.CharField(max_length=30, null=False, blank=False)
     price = models.FloatField(default=0, null=False, blank=False)
