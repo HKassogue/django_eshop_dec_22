@@ -125,7 +125,18 @@ def cart(request):
     return render(request,"eshop/cart.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping, 'coupon': coupon})
 
 def checkout(request):
-    return render(request,"eshop/checkout.html", {})
+    cart = request.session.get('cart', {})
+    products = []
+    quantities = []
+    total = 0
+    shipping = 10
+    coupon = 0
+    for id, qty in cart.items():
+        product = Product.objects.get(id=int(id))
+        products.append(product)
+        quantities.append(qty)
+        total += qty * product.price
+    return render(request,"eshop/checkout.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping})
 
 def login(request):
     return render(request, "eshop/login.html")
