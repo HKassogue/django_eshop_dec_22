@@ -132,6 +132,7 @@ def cart(request):
     return render(request,"eshop/cart.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping, 'coupon': coupon})
 
 def checkout(request):
+    form = CheckOutForm()
     cart = request.session.get('cart', {})
     products = []
     quantities = []
@@ -143,59 +144,46 @@ def checkout(request):
         products.append(product)
         quantities.append(qty)
         total += qty * product.price
-    return render(request,"eshop/checkout.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping})
-    # if request.user.is_authenticated:
-    #     customer = Customer.objects.get(user=request.user)
-    #     order = Order.objects.get(customer=customer, completed=False)
-    if request.POST == 'POST':
-        #order = Order.objects.get(customer=customer, completed=False)
-        token = request.POST.get('stripeToken')
-        #chargeID = stripe_payment(settings.STRIPE_SECRET_KEY,token, order.get_total(),str(order.id))
-        form = CheckOutForm(request.POST)
-        if form.is_valid():
-            address = form.cleaned_data.get('address')
-            mobile = form.cleaned_data.get('mobile')
-            country = form.cleaned_data.get('country')
-            city = form.cleaned_data.get('city')
-            state = form.cleaned_data.get('state')
-            zipcode = form.cleaned_data.get('zipcode')
-            delivery = Delivery(
-                address = address,
-                mobile = mobile,
-                country = country,
-                city = city,
-                price = 0,
-                delivery_by = "",
-                state = state,
-                zipcode = zipcode,
-            )
-            delivery.save()
-            return render(request, 'eshop/shop.html')
-        else:
-            message = "Il y'a une erreur"
-            form = CheckOutForm()
-            context = {
-                'ms': message,
-                'form':form
-            }
-            return render(request,"eshop/checkout.html", context)
-    else:
-        form = CheckOutForm()
         context = {
-            'STRIPE_PUBLIC_KEY': settings.STRIPE_PUBLIC_KEY,
-            #'order': order,
+            
+            'items': zip(products,quantities),
+            'total': total,
+            'shipping': shipping,
             'form':form
         }
     return render(request,"eshop/checkout.html", context)
-    # try:
-    #     customer = Customer.objects.get(user=request.user)
-    #     order = Order.objects.get(customer=customer, completed=False)
-        
-        
-    # except ObjectDoesNotExist:
-    #     pass
-    
-    
+def add_delivery(request):
+    if request.user.is_authenticated:
+        customer = Customer.objects.get(user=request.user)
+        order = Order.objects.get(customer=customer, completed=False)
+        context = {
+            'STRIPE_PUBLIC_KEY': settings.STRIPE_PUBLIC_KEY,
+            'order': order,
+        }
+        if request.POST == 'POST':
+            order = Order.objects.get(customer=customer, completed=False)
+            token = request.POST.get('stripeToken')
+            chargeID = stripe_payment(settings.STRIPE_SECRET_KEY,token, order.get_total(),str(order.id))
+            form = CheckOutForm(request.POST)
+            if form.is_valid():
+                address = form.cleaned_data.get('address')
+                mobile = form.cleaned_data.get('mobile')
+                country = form.cleaned_data.get('country')
+                city = form.cleaned_data.get('city')
+                state = form.cleaned_data.get('state')
+                zipcode = form.cleaned_data.get('zipcode')
+                delivery = Delivery(
+                    address = address,
+                    mobile = mobile,
+                    country = country,
+                    city = city,
+                    price = order.products.price,
+                    delivery_by = chargeID,
+                    state = state,
+                    zipcode = zipcode,
+                )
+                delivery.save()
+                return render(request, 'eshop/shop.html')    
 
 def login(request):
     return render(request, "eshop/login.html")
