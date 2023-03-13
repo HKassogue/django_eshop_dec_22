@@ -138,8 +138,9 @@
                     <div class="product-img position-relative overflow-hidden">
                         <img class="img-fluid w-100" src="{{product.first_image}}" alt="">
                         <div class="product-action">
-                            <a class="btn btn-outline-dark btn-square" href="{% url 'edit_cart_item' id_product=product.id %}"><i class="fa fa-shopping-cart"></i></a>
-                            <a class="btn btn-outline-dark btn-square" href=""><i class="far fa-heart"></i></a>
+                            <!-- <a class="btn btn-outline-dark btn-square" href="{% url 'edit_cart_item' id_product=product.id %}"><i class="fa fa-shopping-cart"></i></a> -->
+                            <a class="btn btn-outline-dark btn-square addto-cart" href="{% url 'edit_cart_item' id_product=product.id %}" data-product-id="{{ product.id }}" ><i class="fa fa-shopping-cart"></i></a>
+                            <a class="btn btn-outline-dark btn-square btn-like" href="#" data-product-id="{{ produit.id }}"><i class="far fa-heart"></i></a>
                             <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-sync-alt"></i></a>
                             <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-search"></i></a>
                         </div>
@@ -165,7 +166,6 @@
 </div>
 <!-- Products End -->
 
-
 <!-- Offer Start -->
 <div class="container-fluid pt-5 pb-3">
     <div class="row px-xl-5">
@@ -173,9 +173,9 @@
             <div class="product-offer mb-30" style="height: 300px;">
                 <img class="img-fluid" src="{% static 'img/offer-1.jpg' %}" alt="">
                 <div class="offer-text">
-                    <h6 class="text-white text-uppercase">Save 20%</h6>
-                    <h3 class="text-white mb-3">Special Offer</h3>
-                    <a href="" class="btn btn-primary">Shop Now</a>
+                    <h6 class="text-white text-uppercase">Reduction 20%</h6>
+                    <h3 class="text-white mb-3">Offre Speciale</h3>
+                    <a href="" class="btn btn-primary">Acheter Maintenant</a>
                 </div>
             </div>
         </div>
@@ -183,17 +183,51 @@
             <div class="product-offer mb-30" style="height: 300px;">
                 <img class="img-fluid" src="{% static 'img/offer-2.jpg' %}" alt="">
                 <div class="offer-text">
-                    <h6 class="text-white text-uppercase">Save 20%</h6>
-                    <h3 class="text-white mb-3">Special Offer</h3>
-                    <a href="" class="btn btn-primary">Shop Now</a>
+                    <h6 class="text-white text-uppercase">Reduction 20%</h6>
+                    <h3 class="text-white mb-3">Offre Spéciale</h3>
+                    <a href="" class="btn btn-primary">Acheter Maintenant</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <!-- Offer End -->
-
-
+<div class="container-fluid pt-5 pb-3">
+    <h2 class="section-title position-relative text-uppercase mx-xl-5 mb-4"><span class="bg-secondary pr-3">Upcoming Products</span></h2>
+    <div class="row px-xl-5">
+        {% for produit in produits %} 
+        <div class="col-lg-3 col-md-4 col-sm-6 pb-1">
+            <div class="product-item bg-light mb-4">
+                <div class="product-img position-relative overflow-hidden">
+                    <img class="img-fluid w-100" src="{{produit.0.first_image}}" alt="">
+                    <div class="product-action">
+                        <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-shopping-cart"></i></a>
+                        <a class="btn btn-outline-dark btn-square" href="#"><i class="far fa-heart"></i></a>
+                        <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-sync-alt"></i></a>
+                        <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-search"></i></a> 
+                    </div>
+                </div>
+                <div class="text-center py-4">
+                    <a class="h6 text-decoration-none text-truncate" href="{% url 'detail' id=produit.0.id %}">{{produit.0.name}}</a>
+                        <div class="d-flex align-items-center justify-content-center mt-2">
+                            <h5>${{produit.0.price|floatformat}}</h5><h6 class="text-muted ml-2"><del>{{produit.0.fake_promo|floatformat}}</del></h6><br>
+                            
+                        </div>
+                        <h6>Date: {{produit.5}}</h6>
+                    <div class="d-flex align-items-center justify-content-center mb-1">
+                        <small class="fa fa-star text-primary mr-1"></small>
+                        <small class="fa fa-star text-primary mr-1"></small>
+                        <small class="fa fa-star text-primary mr-1"></small>
+                        <small class="far fa-star text-primary mr-1"></small>
+                        <small class="far fa-star text-primary mr-1"></small>
+                        <small>({{produit.1}})</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 <!-- Products Start -->
 <div class="container-fluid pt-5 pb-3">
     <h2 class="section-title position-relative text-uppercase mx-xl-5 mb-4"><span class="bg-secondary pr-3">Recent Products</span></h2>

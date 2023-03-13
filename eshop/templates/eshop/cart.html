@@ -34,7 +34,7 @@
                     </thead>
                     <tbody class="align-middle">
                         {% for product, quantity in items %}
-                        <tr>
+                        <tr id="cart-list">
                             <td class="align-middle"><img src="{{product.first_image}}" alt="{{product.name}}" style="width: 50px;"> {{product.name}}</td>
                             <td class="align-middle">${{product.price}}</td>
                             <td class="align-middle">
