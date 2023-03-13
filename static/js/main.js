@@ -90,9 +90,17 @@
         var oldValue = button.parent().parent().find('input').val();
         if (button.hasClass('btn-plus')) {
             var newVal = parseFloat(oldValue) + 1;
+            if (button.hasClass('increase_item')) {
+                var productId = this.dataset.product
+                edit_cart_item(productId, 1)
+            }
         } else {
             if (oldValue > 0) {
                 var newVal = parseFloat(oldValue) - 1;
+                if (button.hasClass('decrease_item')) {
+                    var productId = this.dataset.product
+                    edit_cart_item(productId, -1)
+                }
             } else {
                 newVal = 0;
             }
@@ -109,20 +117,12 @@ for(var i=0; i<updateBtns.length; i++) {
     updateBtns[i].addEventListener('click', function(e){
         e.preventDefault()
         var productId = this.dataset.product
-        var action = this.dataset.action
-        //console.log('productId', productId, 'action', action)
-        //console.log('user:', user)
-        //if(user === 'AnonymousUser') {
-        //    console.log('Not logged in')
-        //} else {
-        //    console.log('User is logged in, sending data')
-        //}
-        updateUserOrder(productId, action)
+        edit_cart_item(productId, 1)
     }) 
 }
 
-function updateUserOrder(productId, action) {
-    var url = '/update_item/'
+function edit_cart_item(productId, quantity, erase=false) {
+    var url = '/edit_cart_item/'
     fetch(url, {
         method: 'POST',
         headers: {
@@ -130,13 +130,11 @@ function updateUserOrder(productId, action) {
             // if there is csrf error
             'X-CSRFToken': csrftoken
         },
-        body: JSON.stringify({'productId': productId, 'action': action})
+        body: JSON.stringify({'productId': productId, 'quantity': quantity, 'erase': erase})
     })
-
     .then((response) => {
         return response.json()
     })
-
     .then((data) => {
         //console.log('data:', data)
         location.reload()

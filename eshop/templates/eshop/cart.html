@@ -40,20 +40,22 @@
                             <td class="align-middle">
                                 <div class="input-group quantity mx-auto" style="width: 100px;">
                                     <div class="input-group-btn">
-                                        <button class="btn btn-sm btn-primary btn-minus" >
+                                        <button class="btn btn-sm btn-primary btn-minus decrease_item" data-product="{{product.id}}" >
                                         <i class="fa fa-minus"></i>
                                         </button>
                                     </div>
-                                    <input type="text" class="form-control form-control-sm bg-secondary border-0 text-center" value="{{quantity}}">
+                                    <input type="text" class="form-control form-control-sm bg-secondary border-0 text-center" 
+                                        value="{{quantity}}" id="prod_{{product.id}}_qty" autocomplete='off' 
+                                        onchange="event.preventDefault(); edit_cart_item({{product.id}}, getElementById('prod_{{product.id}}_qty').value, true);">
                                     <div class="input-group-btn">
-                                        <button class="btn btn-sm btn-primary btn-plus">
+                                        <button class="btn btn-sm btn-primary btn-plus increase_item" data-product="{{product.id}}">
                                             <i class="fa fa-plus"></i>
                                         </button>
                                     </div>
                                 </div>
                             </td>
                             <td class="align-middle">${% widthratio product.price 1 quantity %}</td>
-                            <td class="align-middle"><button class="btn btn-sm btn-danger"><i class="fa fa-times"></i></button></td>
+                            <td class="align-middle"><button class="btn btn-sm btn-danger" onclick="event.preventDefault(); edit_cart_item({{product.id}}, -getElementById('prod_{{product.id}}_qty').value);"><i class="fa fa-times"></i></button></td>
                         </tr>
                         {% endfor %}
                     </tbody>

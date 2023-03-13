@@ -9,3 +9,7 @@ def getDashboardData(request):
     total_ventes = 100000
     total_ventes_week = [1000, 2500, 1800, 4000, 5000, 2000, 1000]
     return {'total_ventes': total_ventes, 'total_ventes_week': total_ventes_week}
+
+def getSessionInfo(request):
+    cart = request.session.get('cart', {})
+    return {'cart_items_nbr': sum(cart.values())}

@@ -13,7 +13,6 @@ def index(request):
     context =  {
         'products': products,
     }
-    cart_items_nbr = 0
     if request.user.is_authenticated:
         try:
             customer = Customer.objects.get(user=request.user)
@@ -27,12 +26,11 @@ def index(request):
                         cart[key] += item.quantity
                     else:
                         cart[key] = item.quantity
-                    cart_items_nbr += item.quantity
                 request.session['cart'] = cart
                 request.session.modified = True
         except ObjectDoesNotExist:
             pass
-    context['cart_items_nbr'] = cart_items_nbr
+            
     return render(request, "eshop/index.html", context)
 
 def shop(request, cat='all'):
@@ -132,42 +130,22 @@ def checkout(request):
 def login(request):
     return render(request, "eshop/login.html")
 
-def edit_order_item(request, id_product):
-    cart = request.session.get('cart', {})
-    id_product = str(id_product)
-
-    if request.method == "POST":
-        quantity = int(request.POST['qty'])
-    else:
-        quantity = 1
-
-    if id_product in cart:
-        cart[id_product] += quantity
-        if cart[id_product] <= 0 :
-            del cart[id_product]
-    else:
-        cart[id_product] = quantity
-    request.session['cart'] = cart
-    request.session.modified = True
-    return redirect(request.META.get('HTTP_REFERER'))
-
-def update_item(request):
+def edit_order_item(request):
     cart = request.session.get('cart', {})
     data = json.loads(request.body)
-    id_product = data['productId']
-    action = data['action']
-
-    if action == "add":
-        quantity = 1
-    else:
-        quantity = -1
+    id_product = str(data['productId'])
+    quantity = int(data['quantity'])
+    erase = bool(data['erase'])
 
     if id_product in cart:
-        cart[id_product] += quantity
-        if cart[id_product] <= 0 :
-            del cart[id_product]
+        if not erase:
+            cart[id_product] += quantity
+            if cart[id_product] <= 0 :
+                del cart[id_product]
+        else:
+            cart[id_product] = quantity
     else:
         cart[id_product] = quantity
     request.session['cart'] = cart
     request.session.modified = True
-    return JsonResponse('Item added', safe=False)
+    return JsonResponse('Item edited', safe=False)
