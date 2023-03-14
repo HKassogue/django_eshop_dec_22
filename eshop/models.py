@@ -169,7 +169,7 @@ class Order(models.Model):
 class Order_details(models.Model):
     order = models.ForeignKey('Order', null=True, blank=False, on_delete=models.SET_NULL)
     product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
-    ss = models.SmallIntegerField(default=1, null=True, blank=False)
+    quantity = models.SmallIntegerField(default=1, null=True, blank=False)
     price = models.SmallIntegerField(default=1, null=True, blank=False)
     
     def __str__(self):
@@ -243,3 +243,6 @@ class Faqs(models.Model):
 
     def __str__(self):
         return f"{self.question}"
+
+class Filter_Price(models.Model):
+    price = models.CharField(max_length=50, choices=[('0 - 1000', '0 - 1000'), ('1000 - 2000', '1000 - 2000'), ('2000 - 3000', '2000 - 3000'), ('3000 - 4000', '3000 - 4000'), ('4000 - 5000', '4000 - 5000'), ('5000 - 10000', '5000 - 10000')])
