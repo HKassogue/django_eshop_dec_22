@@ -1,50 +1,28 @@
 from datetime import datetime
 from django.shortcuts import get_object_or_404, render, redirect
-from django.http import HttpResponse, JsonResponse
-from .models import Arrival, Arrival_details, Like, Product, Order, Order_details, Customer
-from .models import Product, Category, Order, Order_details, Customer,Coupon
+from django.http import JsonResponse
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views import View
-from eshop.forms import CheckOutForm
-from .models import Delivery, Payments, Product, Category, Order, Order_details, Customer
-from.context_processors import *
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
-from .models import Product, Category, Order, Order_details, Customer, Filter_Price
+from .context_processors import *
+from .forms import CheckOutForm
+from .models import *
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from datetime import datetime
 
 
 # Create your views here.
 def index(request):
-    products = Product.objects.all()
-    
-    current_time = datetime.now()
-    upcoming_arrivals = Arrival.objects.filter(closed_at__gt=current_time, is_closed=False)
-    produits = []
-    for arrival in upcoming_arrivals:
-        arrival_details = arrival.arrival_details_set.all()
-        for detail in arrival_details:
-            product = detail.product
-            quanti = detail.quantity
-            image = product.first_image
-            price = product.price
-            day = arrival.closed_at
-            nam = product.name
-            produits.append((product, quanti, image, price,nam,day))
-    context =  { 'produits': produits,
+    products = Product.objects.filter(active=True).order_by('name')[:12]
+    arrivals = Arrival.objects.filter(is_closed=False)
+    arrivals_details = []
+    for arrival in arrivals:
+        arrivals_details += list(Arrival_details.objects.filter(arrival=arrival))
+    context = {
         'products': products,
-        
-        
+        'arrivals_details': arrivals_details
     }
 
     if request.user.is_authenticated:
@@ -427,7 +405,7 @@ def like(request):
         # Retourner une réponse JSON avec le nombre de likes mis à jour
         data = {'likes': product.likes}
         return JsonResponse(data)
-@require_POST
+
 def add_to_cart(request, product_id):
     product = Product.objects.get(id=product_id)
     cart = request.session.get('cart', {})

@@ -186,14 +186,14 @@ class Arrival(models.Model):
     is_closed = models.BooleanField(default=False, null=False, blank=False)
     products = models.ManyToManyField('Product', through='Arrival_details', related_name='+')
     def __str__(self):
-        return f"{self.id}"
+        return f"{self.id} on {self.created_at}"
     
 class Arrival_details(models.Model):
     arrival = models.ForeignKey('Arrival', null=True, blank=False, on_delete=models.SET_NULL)
     product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
     quantity = models.SmallIntegerField(default=1, null=True, blank=True)
     def __str__(self):
-        return f"{self.id}"
+        return f"{self.arrival.id} : {self.product.name} x {self.quantity}"
 
 class Delivery(models.Model):
     address = models.CharField(max_length=30, null=False, blank=False)
