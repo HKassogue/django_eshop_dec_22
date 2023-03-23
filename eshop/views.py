@@ -236,6 +236,17 @@ def checkout(request):
 def login(request):
     return render(request, "eshop/login.html")
 
+def review(request, id):
+    if request.method == 'POST':
+        product = Product.objects.get(id=id)
+        rate = request.POST['rate']
+        comment = request.POST['comment']
+        name = request.POST['name']
+        email = request.POST['email']
+        Review(product=product, rate=rate, comment=comment, name=name, email=email).save()
+    return redirect('detail', id=id)
+
+
 
 def edit_order_item(request, id_product):
     cart = request.session.get('cart', {})

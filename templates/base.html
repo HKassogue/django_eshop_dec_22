@@ -42,6 +42,33 @@
                 height: 100%;
             }
         }
+
+        .stars input[type=radio]:checked ~ label:after {
+            content: '\2606'
+        }
+
+        .stars input[type=radio] {
+            display: none;
+        }
+
+        .stars:hover input[type=radio]:checked ~ label:after,
+          .stars label:after {
+            content: '\2605';
+        }
+
+        .stars label {
+            content: '\2605';
+            cursor: pointer;
+        }
+        
+        .stars label:after {
+            content: '\2605';
+        }
+        
+        .stars label:hover:after,
+          .stars label:hover ~ label:after {
+            content: '\2606' !important;
+        }
     </style>
 </head>
 

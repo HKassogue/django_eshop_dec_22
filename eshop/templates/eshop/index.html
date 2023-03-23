@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load set_html %}
 
 {% block content %}
 {% block caroussel %}
@@ -151,11 +152,7 @@
                             <h5>${{product.price|floatformat}}</h5><h6 class="text-muted ml-2"><del>{{product.fake_promo|floatformat}}</del></h6>
                         </div>
                         <div class="d-flex align-items-center justify-content-center mb-1">
-                            <small class="fa fa-star text-primary mr-1"></small>
-                            <small class="fa fa-star text-primary mr-1"></small>
-                            <small class="fa fa-star text-primary mr-1"></small>
-                            <small class="fa fa-star-half-alt text-primary mr-1"></small>
-                            <small class="far fa-star text-primary mr-1"></small>
+                            {{product.reviews_rate|format_rate}}
                             <small>({{product.stock}})</small>
                         </div>
                     </div>
@@ -213,15 +210,9 @@
                     <a class="h6 text-decoration-none text-truncate" href="{% url 'detail' id=arrival_detail.product.id %}">{{arrival_detail.product.name}}</a>
                         <div class="d-flex align-items-center justify-content-center mt-2">
                             <h5>${{arrival_detail.product.price|floatformat}}</h5><h6 class="text-muted ml-2"><del>{{arrival_detail.product.fake_promo|floatformat}}</del></h6><br>
-                            
                         </div>
-                        <h6>Date: {{product.5}}</h6>
                     <div class="d-flex align-items-center justify-content-center mb-1">
-                        <small class="fa fa-star text-primary mr-1"></small>
-                        <small class="fa fa-star text-primary mr-1"></small>
-                        <small class="fa fa-star text-primary mr-1"></small>
-                        <small class="far fa-star text-primary mr-1"></small>
-                        <small class="far fa-star text-primary mr-1"></small>
+                        {{product.reviews_rate|format_rate}}
                         <small>({{arrival_detail.quantity}})</small>
                     </div>
                 </div>
