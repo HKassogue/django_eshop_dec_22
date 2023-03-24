@@ -84,3 +84,7 @@ def getCountReview(request):
    review = Review.objects.count()
    return  {"review":review}
 
+def getSessionInfo(request):
+    cart = request.session.get('cart', {})
+    likes = request.session.get('likes', {})
+    return {'cart_items_count': sum(cart.values()), 'likes_count': list(likes.values()).count(True)}
