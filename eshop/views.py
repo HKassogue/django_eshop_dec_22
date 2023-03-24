@@ -11,6 +11,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.decorators.csrf import csrf_exempt
+import json
 
 
 # Create your views here.
@@ -174,6 +175,7 @@ def cart(request):
             total += qty * product.price
     return render(request,"eshop/cart.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping, 'coupon': coupon})
 
+
 def checkout(request):
     form = CheckOutForm()
     cart = request.session.get('cart', {})
@@ -195,6 +197,8 @@ def checkout(request):
             'form':form
         }
     return render(request,"eshop/checkout.html", context)
+
+
 def add_delivery(request):
     if request.user.is_authenticated:
         customer = Customer.objects.get(user=request.user)
@@ -229,12 +233,6 @@ def add_delivery(request):
                 return render(request, 'eshop/shop.html')    
     return render(request, "eshop/cart.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping, 'coupon': coupon})
 
-def checkout(request):
-    return render(request,"eshop/checkout.html", {})
-
-
-def login(request):
-    return render(request, "eshop/login.html")
 
 def review(request, id):
     if request.method == 'POST':
@@ -245,7 +243,6 @@ def review(request, id):
         email = request.POST['email']
         Review(product=product, rate=rate, comment=comment, name=name, email=email).save()
     return redirect('detail', id=id)
-
 
 
 def edit_order_item(request, id_product):
@@ -266,6 +263,7 @@ def edit_order_item(request, id_product):
     request.session['cart'] = cart
     request.session.modified = True
     return redirect(request.META.get('HTTP_REFERER'))
+
 
 @csrf_exempt
 def decreace_increase(request):
@@ -294,6 +292,7 @@ def decreace_increase(request):
         "status":"202","message":"update succefull!","data":data
     })
 
+
 @csrf_exempt
 def del_in_cart(request):
     cart = request.session.get('cart', {})
@@ -314,6 +313,7 @@ def del_in_cart(request):
                     "status":"400","message":"error update!"
                 })
 
+
 @csrf_exempt
 def coupons(request):
     if request.method == "GET":
@@ -330,6 +330,7 @@ def coupons(request):
                "status":"404","message":"Not found!", 
             }
     return JsonResponse(jsonResponse)
+
 
 @csrf_exempt
 def proceedCheckout(request):
@@ -376,9 +377,9 @@ def proceedCheckout(request):
     return JsonResponse(jsonResponse)
 
 
-
 import secrets
 import string
+
 
 def generate_code():
     alphabet = string.ascii_uppercase + string.ascii_lowercase + string.digits
@@ -388,34 +389,35 @@ def generate_code():
             break
     return code
 
-def like_product(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    email = request.POST.get('email') # récupérer l'adresse e-mail de l'utilisateur connecté ou d'un cookie
-    liked = request.POST.get('liked', 'true') == 'true'
-    Like.objects.update_or_create(email=email, product=product, defaults={'liked': liked})
-    like_count = product.likes.filter(liked=True).count()
-    return JsonResponse({'liked': liked, 'like_count': like_count})
 
 def like(request):
-    if request.method == 'POST':
-        product_id = request.POST.get('product.id')
-        email = request.POST.get('email')
-        
+    data = json.loads(request.body)
+    id = int(data['id'])
+    print(f"id={id}")
+    product = get_object_or_404(Product, id=id)
+    if request.user.is_authenticated:
+        email = request.user.email
         # Vérifiez si l'utilisateur a déjà aimé le produit
-        like, created = Like.objects.get_or_create(product_id=product_id, email=email)
-        
+        like, created = Like.objects.get_or_create(product=product, email=email)
         if not created:
             like.liked = not like.liked
             like.save()
-            
-        # Mettre à jour le nombre de likes dans le modèle de produit
-        product = Like.objects.get(id=product_id)
-        product.likes = product.likes_count()
-        product.save()
-        
-        # Retourner une réponse JSON avec le nombre de likes mis à jour
-        data = {'likes': product.likes}
-        return JsonResponse(data)
+    else:
+        email = "anonymoususer@mail.com"
+        like = Like.objects.create(product, email=email)
+    likes = request.session.get('likes', {})
+    likes[id] = like.liked
+    request.session['likes'] = likes
+    request.session.modified = True
+    # return redirect(request.META.get('HTTP_REFERER'))
+    data = {
+        "status": "202", 
+        "message": "like/unlike succefull!",
+        "data": id
+    }
+    return JsonResponse(data, safe=False)
+
+
 
 def add_to_cart(request, product_id):
     product = Product.objects.get(id=product_id)
@@ -423,7 +425,6 @@ def add_to_cart(request, product_id):
     cart[product_id] = cart.get(product_id, 0) + 1
     request.session['cart'] = cart
     return redirect('cart')
-
 
 
 # def filtered_products(request):
@@ -438,6 +439,7 @@ def add_to_cart(request, product_id):
 #     # passer les produits filtrés au contexte de la vue
 #     context = {'products': products}
 #     return render(request, 'products.html', context)
+
 
 def filtered_products(request):
     query = request.GET.get('q', '')

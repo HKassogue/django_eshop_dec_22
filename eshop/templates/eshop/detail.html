@@ -119,6 +119,7 @@
                         </div>
                         <button type="submit" class="btn btn-primary px-3"><i class="fa fa-shopping-cart mr-1"></i> Add To
                             Cart</button>
+                        <a class="btn btn-outline-dark btn-square px-3 mr-3" onclick="event.preventDefault(); like_product({{arrival_detail.product.id}});"><i class="far fa-heart"></i></a>
                         </form>
                     </div>
                     <div class="d-flex pt-2">
@@ -273,8 +274,8 @@
                         <div class="product-img position-relative overflow-hidden">
                             <img class="img-fluid w-100" src="{{product.first_image}}" alt="{{product.name}}">
                             <div class="product-action">
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-shopping-cart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="far fa-heart"></i></a>
+                                <a class="btn btn-outline-dark btn-square addto-cart" href="{% url 'edit_cart_item' id_product=product.id %}" data-product-id="{{ product.id }}" ><i class="fa fa-shopping-cart"></i></a>
+                                <a class="btn btn-outline-dark btn-square" onclick="event.preventDefault(); like_product({{product.id}});"><i class="far fa-heart"></i></a>
                                 <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-sync-alt"></i></a>
                                 <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-search"></i></a>
                             </div>
