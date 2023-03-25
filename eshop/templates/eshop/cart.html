@@ -44,7 +44,9 @@
                                         <i  class="fa fa-minus increace"></i>
                                         </button>
                                     </div>
-                                    <input type="text" data ="{{ product.id }}" class="form-control form-control-sm bg-secondary border-0 text-center" value="{{quantity}}">
+                                    <input type="text" data ="{{ product.id }}" class="form-control form-control-sm bg-secondary border-0 text-center" 
+                                        id="{{product.id}}_qty" value="{{quantity}}" autocomplete='off'
+                                        onchange="event.preventDefault(); add_cart_item({{product.id}}, getElementById('{{product.id}}_qty').value, true);">
                                     <div class="input-group-btn">
                                         <button class="btn btn-sm btn-primary btn-plus">
                                             <i class="fa fa-plus decreace"></i>
@@ -117,33 +119,33 @@
         }
         prd = button.parent().parent().find('input').attr('data')
 
-        get_ajax(prd,qty);
+        get_ajax(prd, qty);
         button.parent().parent().find('input').val(newVal);
     });
 
-     function get_ajax(prd,qty){
+     function get_ajax(prd, qty){
         $.ajax({
             url: "{% url 'decreace_increase'  %}",
-            data: {qty : qty,id_product:prd},
+            data: {qty: qty, id_product: prd},
             dataType: 'json',
             success: function(data) {
-                console.log(data)
-                console.log("lengrh: "+data)
+                //console.log(data)
+                //console.log("lengrh: "+data)
                 if(data.status == "202"){
-                    var subtotal = ($(".subtotal").text()).replace(',','.')
+                    var subtotal = ($(".subtotal").text()).replace(',', '.')
                     var reduction = 0
-                    console.log(data.data)
-                    console.log(subtotal)
+                    //console.log(data.data)
+                    //console.log(subtotal)
                     var perc = $("#perc_coubon").text().split(" ")[0]
                     if(data.data > 0){
-                        $(".total_prd_"+prd).text(Number($(".total_prd_"+prd).text()) + data.data) 
+                        $(".total_prd_"+prd).text(Number($(".total_prd_" + prd).text()) + data.data) 
                         $(".subtotal").text(Number(subtotal) + data.data)
                         subtotal = (Number(subtotal) + data.data) + 10
                         reduction = Number($("#reduction").text())
                         if(perc){ 
-                            if(subtotal > (subtotal * perc/100)){
-                                $("#reduction").text(subtotal * perc/100)
-                                $("#total").text((subtotal) - (subtotal * perc/100))
+                            if(subtotal > (subtotal * perc / 100)){
+                                $("#reduction").text(subtotal * perc / 100)
+                                $("#total").text((subtotal) - (subtotal * perc / 100))
                             }else{
                                 $("#reduction").text(0)
                                 $("#total").text((subtotal))
@@ -195,16 +197,16 @@
                 data: {code : coupon_code},
                 dataType: 'json',
                 success: function(data) {
-                    console.log(data)
-                    console.log(data.status)
-                    var subtotal = ($(".subtotal").text()).replace(',','.')
+                    //console.log(data)
+                    //console.log(data.status)
+                    var subtotal = ($(".subtotal").text()).replace(',', '.')
                     subtotal = Number(subtotal) + 10
                     if(data.status == "202"){
                         if(data.data[0].coupon_type_id == 1) {
-                            if( subtotal > (subtotal * data.data[0].discount)/100){
-                                $("#reduction").text((subtotal * data.data[0].discount)/100)
-                                $("#total").text(subtotal - ((subtotal * data.data[0].discount)/100))
-                                $("#perc_coubon").text(data.data[0].discount+" %")
+                            if( subtotal > (subtotal * data.data[0].discount) / 100){
+                                $("#reduction").text((subtotal * data.data[0].discount) / 100)
+                                $("#total").text(subtotal - ((subtotal * data.data[0].discount) / 100))
+                                $("#perc_coubon").text(data.data[0].discount + " %")
                             }else{
                                 $.notify("Impossible le total à payer doit etre supérieur à la reduction", "error");
                             }
@@ -226,7 +228,7 @@
                 }
             });
         }else{
-            console.log("coupon vide!");
+            //console.log("coupon vide!");
             $.notify("La valuer du  coupon code est vide.", "error");
         }
     })
@@ -238,8 +240,8 @@
             data: {id_product:prd},
             dataType: 'json',
             success: function(data) {
-                console.log(data)
-                console.log(data.status)
+                //console.log(data)
+                //console.log(data.status)
                 if(data.status == "202"){
                     if(data.data){
                         console.log("#prd_"+data.data)
@@ -285,8 +287,8 @@
             data: {code : coupon_code},
             dataType: 'json',
             success: function(data) {
-                console.log(data)
-                console.log(data.status)
+                //console.log(data)
+                //console.log(data.status)
                 if(data.status == "202"){
                     window.location.assign("{% url 'checkout'  %}")
                 }else if(data.status = "401"){

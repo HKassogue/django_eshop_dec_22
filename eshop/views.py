@@ -25,14 +25,12 @@ def index(request):
         'products': products,
         'arrivals_details': arrivals_details
     }
-
     if request.user.is_authenticated:
         try:
             customer = Customer.objects.get(user=request.user)
-            order = Order.objects.filter(customer_id=customer.id, completed=False).first()
-            
+            order = Order.objects.filter(customer=customer, completed=False).first()
             if order:
-                order_details = Order_details.objects.get(order_id=order.id)
+                order_details = Order_details.objects.get(order=order)
                 cart = request.session.get('cart', {})
                 for item in order_details:
                     key = str(item.product.id)
@@ -45,7 +43,6 @@ def index(request):
                     cart[str(item.product.id)] = item.quantity
         except ObjectDoesNotExist:
             pass
-
     return render(request, "eshop/index.html", context)
 
 
@@ -54,9 +51,7 @@ def shop(request, cat='all'):
     perpage = request.GET.get('per', 6)
     sort = request.GET.get('sort', 'latest')
     query = request.GET.get('q', '')
-# filter_price get
     filter_Price = Filter_Price.objects.all()
-
     if cat == 'all':
         if not query:
             if sort == 'latest':
@@ -79,7 +74,6 @@ def shop(request, cat='all'):
             else:
                 products = Product.objects.filter(category__slug=cat).annotate(
                     nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
-
         else:
             products = Product.objects.filter(
                 category__slug=cat).filter(name__icontains=query)
@@ -98,15 +92,16 @@ def shop(request, cat='all'):
     }
     return render(request, "eshop/shop.html", context)
 
+
 @csrf_exempt
 def product(request):
     #product =  Product.objects.filter(name__icontains="testh")
     product =  Product.objects.all()        
     data=list(product.values())
     for i in range(len(product)):
-        data[i]['first_image'] = product[i].first_image
-    
+        data[i]['first_image'] = product[i].first_image    
     return JsonResponse(data,safe=False)
+
 
 def search(request):
     query = request.GET.get('q', '')
@@ -245,16 +240,14 @@ def review(request, id):
     return redirect('detail', id=id)
 
 
-def edit_order_item(request, id_product):
+def add_to_cart(request):
     cart = request.session.get('cart', {})
-    id_product = str(id_product)
-
-    if request.method == "POST":
-        quantity = int(request.POST['qty'])
-    else:
-        quantity = 1
-
-    if id_product in cart:
+    data = json.loads(request.body)
+    id_product = data['productId']
+    quantity = int(data['quantity'])
+    erase = bool(data['erase'])
+    
+    if id_product in cart and not erase:
         cart[id_product] += quantity
         if cart[id_product] <= 0:
             del cart[id_product]
@@ -262,7 +255,12 @@ def edit_order_item(request, id_product):
         cart[id_product] = quantity
     request.session['cart'] = cart
     request.session.modified = True
-    return redirect(request.META.get('HTTP_REFERER'))
+    response = {
+        "status": "202", 
+        "message": "add succefull!",
+        "data": f"{id_product} x {quantity}"
+    }
+    return JsonResponse(response, safe=False)
 
 
 @csrf_exempt
@@ -273,17 +271,14 @@ def decreace_increase(request):
         quantity = int(request.GET.get('qty'))
         id_product = int(request.GET.get('id_product')) 
         id_product = str(id_product)
-
     else:
         quantity = 0
-
     if id_product in cart:
         cart[id_product] += quantity
         product = Product.objects.get(id=id_product)
         data = quantity * product.price
         if cart[id_product] <= 0 :
             del cart[id_product]
-
     else:
         cart[id_product] = quantity
     request.session['cart'] = cart
@@ -296,11 +291,9 @@ def decreace_increase(request):
 @csrf_exempt
 def del_in_cart(request):
     cart = request.session.get('cart', {})
-
     if request.method == "GET":
         id_product = int(request.GET.get('id_product')) 
         id_product = str(id_product)
-
     if id_product in cart:
         if cart[id_product] :
             del cart[id_product]
@@ -356,7 +349,7 @@ def proceedCheckout(request):
                 if id > 0:
                     product = Product.objects.get(id=id)
                     if product.stock > qty:
-                        order_detail = Order_details(order_id= order.id,product_id=product.id,quantity=qty,price = product.price)
+                        order_detail = Order_details(order=order, product=product, quantity=qty, price=product.price)
                         order_detail.save()
                         product.stock = product.stock - qty
                         product.save()
@@ -393,7 +386,6 @@ def generate_code():
 def like(request):
     data = json.loads(request.body)
     id = int(data['id'])
-    print(f"id={id}")
     product = get_object_or_404(Product, id=id)
     if request.user.is_authenticated:
         email = request.user.email
@@ -416,15 +408,6 @@ def like(request):
         "data": id
     }
     return JsonResponse(data, safe=False)
-
-
-
-def add_to_cart(request, product_id):
-    product = Product.objects.get(id=product_id)
-    cart = request.session.get('cart', {})
-    cart[product_id] = cart.get(product_id, 0) + 1
-    request.session['cart'] = cart
-    return redirect('cart')
 
 
 # def filtered_products(request):
