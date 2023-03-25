@@ -55,28 +55,27 @@ def shop(request, cat='all'):
     if cat == 'all':
         if not query:
             if sort == 'latest':
-                products = Product.objects.all()
+                products = Product.objects.filter(active=True)
             elif sort == 'popular':
-                products = Product.objects.all().annotate(
+                products = Product.objects.filter(active=True).annotate(
                     nbr_likes=Count('likes')).order_by('-nbr_likes')
             else:
-                products = Product.objects.all().annotate(
+                products = Product.objects.filter(active=True).annotate(
                     nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
         else:
-            products = Product.objects.filter(name__icontains=query)
+            products = Product.objects.filter(name__icontains=query, active=True)
     else:
         if not query:
             if sort == 'latest':
-                products = Product.objects.filter(category__slug=cat)
+                products = Product.objects.filter(category__slug=cat, active=True)
             elif sort == 'popular':
-                products = Product.objects.filter(category__slug=cat).annotate(
+                products = Product.objects.filter(category__slug=cat, active=True).annotate(
                     nbr_likes=Count('likes')).order_by('-nbr_likes')
             else:
-                products = Product.objects.filter(category__slug=cat).annotate(
+                products = Product.objects.filter(category__slug=cat, active=True).annotate(
                     nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
         else:
-            products = Product.objects.filter(
-                category__slug=cat).filter(name__icontains=query)
+            products = Product.objects.filter(category__slug=cat, active=True).filter(name__icontains=query)
 
     paginator = Paginator(products, perpage)
     try:
@@ -141,7 +140,17 @@ def check(request):
 
 def detail(request, id):
     product = Product.objects.get(id=id)
-    sim_products = Product.objects.filter(category=product.category).filter(active=True)
+    sim_products = list(Product.objects.filter(category=product.category, active=True).filter(active=True)[:5])
+    best_liked = list(Product.objects.filter(active=True).annotate(nbr_likes=Count('likes')).order_by('-nbr_likes'))
+    for prod in sim_products:
+        if prod in best_liked:
+            best_liked.remove(prod)
+    sim_products += best_liked[:5]
+    best_rated = list(Product.objects.filter(active=True).annotate(nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews'))
+    for prod in sim_products:
+        if prod in best_rated:
+            best_rated.remove(prod)
+    sim_products += best_rated[:5]
 
     context = {
         'product': product,
@@ -385,8 +394,9 @@ def generate_code():
 
 def like(request):
     data = json.loads(request.body)
-    id = int(data['id'])
-    product = get_object_or_404(Product, id=id)
+    id = data['id']
+    product = get_object_or_404(Product, id=int(id))
+    likes = request.session.get('likes', {})
     if request.user.is_authenticated:
         email = request.user.email
         # Vérifiez si l'utilisateur a déjà aimé le produit
@@ -394,11 +404,14 @@ def like(request):
         if not created:
             like.liked = not like.liked
             like.save()
+        likes[id] = like.liked
     else:
         email = "anonymoususer@mail.com"
-        like = Like.objects.create(product, email=email)
-    likes = request.session.get('likes', {})
-    likes[id] = like.liked
+        if id in likes:
+            likes[id] = not likes[id]
+        else:
+            like = Like.objects.create(product=product, email=email)
+            likes[id] = like.liked
     request.session['likes'] = likes
     request.session.modified = True
     # return redirect(request.META.get('HTTP_REFERER'))
