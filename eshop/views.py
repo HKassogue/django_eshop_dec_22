@@ -238,15 +238,22 @@ def add_delivery(request):
     return render(request, "eshop/cart.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping, 'coupon': coupon})
 
 
-def review(request, id):
-    if request.method == 'POST':
-        product = Product.objects.get(id=id)
-        rate = request.POST['rate']
-        comment = request.POST['comment']
-        name = request.POST['name']
-        email = request.POST['email']
-        Review(product=product, rate=rate, comment=comment, name=name, email=email).save()
-    return redirect('detail', id=id)
+def review(request):
+    data = json.loads(request.body)
+    product = Product.objects.get(id=int(data['productId']))
+    rate = data['rate']
+    comment = data['comment']
+    name = data['name']
+    email = data['email']
+    Review(product=product, rate=rate, comment=comment, name=name, email=email).save()
+    # return redirect('detail', id=id)
+    # return redirect(request.META.get('HTTP_REFERER', '/'))
+    response = {
+        "status": "202", 
+        "message": "review succefull!",
+        "data": f"{product.id} => {rate}"
+    }
+    return JsonResponse(response, safe=False)
 
 
 def add_to_cart(request):

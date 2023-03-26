@@ -216,8 +216,7 @@
                                     <h4 class="mb-4">Leave a review</h4>
                                     <small>Your email address will not be published. Required fields are marked *</small>
                                     
-                                    <form action={% url 'review' id=product.id %} method='post'>
-                                        {% csrf_token %}
+                                    <form>
                                         <div class="d-flex my-3">
                                             <p class="mb-0 mr-2">Your Rating * :</p>
                                             <div class="stars text-primary">
@@ -246,7 +245,8 @@
                                             <input type="email" class="form-control" id="email" name="email" {% if request.user.is_authenticated %}value="{{request.user.email}}" readonly{% endif %}>
                                         </div>
                                         <div class="form-group mb-0">
-                                            <input type="submit" value="Leave Your Review" class="btn btn-primary px-3">
+                                            <input value="Leave Your Review" class="btn btn-primary px-3" 
+                                                onclick="event.preventDefault(); leave_review({{product.id}});">
                                         </div>
                                     </form>
                                 </div>
@@ -294,4 +294,44 @@
     </div>
     <!-- Products End -->
 
+{% endblock %}
+
+{% block script %}
+<script type="text/javascript">
+    function leave_review(productID) {
+        var url = '/review/'
+        var rates = document.getElementsByName('rate')
+        var rate = 5
+        for (var radio of rates){
+            if (radio.checked) {    
+                rate = radio.value
+                break
+            }
+        }
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                'productId': productID,
+                'rate': rate,
+                'comment': $('#message').val(),
+                'name': $('#name').val(),
+                'email': $('#email').val()
+            })
+        })
+        .then((response) => {
+            return response.json()
+        })
+        .then((data) => {
+            location.reload()
+            //location.reload('#tab-pane-3')
+            //$('#tab-pane-3').load('#tab-pane-3')
+            //$("#tab-pane-3").load(location.href + " #tab-pane-3");
+            //$("#tab-pane-3").load(window.location + "#tab-pane-3");
+        });
+    }
+    </script>
 {% endblock %}

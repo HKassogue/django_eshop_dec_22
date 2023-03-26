@@ -38,7 +38,7 @@ urlpatterns = [
     path('proceedCheckout', views.proceedCheckout, name="proceedCheckout"),
     path('search', views.search, name='search'),
     path('', include('myauth.urls')),
-    path('review/<int:id>', views.review, name="review"),
+    path('review/', views.review, name="review"),
     path('like/', views.like, name="like"),
     # path('admin/admin/', include('admin_volt.urls')),
     path('__debug__/', include('debug_toolbar.urls')),
