@@ -33,17 +33,18 @@ urlpatterns = [
     path('add_delivery/', views.add_delivery, name="add_delivery"),
     path('cart/decreace_increase', views.decreace_increase, name="decreace_increase"),
     path('coupons', views.coupons, name="coupons"),
-    path('del_in_cart', views.del_in_cart, name="del_in_cart"),
+    path('cart/del', views.del_in_cart, name="del_in_cart"),
     path('checkout/', views.checkout, name="checkout"),
     path('proceedCheckout', views.proceedCheckout, name="proceedCheckout"),
     path('search', views.search, name='search'),
     path('', include('myauth.urls')),
-    path('admin/admin/', include('admin_volt.urls')),
-
+    path('review/', views.review, name="review"),
+    path('like/', views.like, name="like"),
+    # path('admin/admin/', include('admin_volt.urls')),
     path('__debug__/', include('debug_toolbar.urls')),
-    path('like',views.like,name="like"),
-    path('add_to_cart/',views.add_to_cart, name="add_to_cart")
-    # path('products/<int:product_id>/like/', views.like_product, name='like_product'),
+    # path('edit_cart_item/<int:id_product>', views.edit_order_item, name='edit_cart_item'),
+    path('cart/add',views.add_to_cart, name="add_to_cart")
     # path('', include('admin_volt.urls')),
+    
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

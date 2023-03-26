@@ -77,8 +77,8 @@ TEMPLATES = [
                 'eshop.context_processors.getCountOrderByDay',
                 'eshop.context_processors.getCountOrderByMonth',
                 'eshop.context_processors.getCountLike', 
-                'eshop.context_processors.getCountReview'
-                
+                'eshop.context_processors.getCountReview',
+                'eshop.context_processors.getSessionInfo',
             ],
         },
     },
@@ -95,9 +95,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'django_eshop_dec_22',
         'USER': 'root',
-        'PASSWORD': '',
+        'PASSWORD': 'root',
         'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'PORT': '8889',
     }
 }
 

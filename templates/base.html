@@ -42,7 +42,55 @@
                 height: 100%;
             }
         }
+
+        .stars input[type=radio]:checked ~ label:after {
+            content: '\2606'
+        }
+
+        .stars input[type=radio] {
+            display: none;
+        }
+
+        .stars:hover input[type=radio]:checked ~ label:after,
+          .stars label:after {
+            content: '\2605';
+        }
+
+        .stars label {
+            content: '\2605';
+            cursor: pointer;
+        }
+        
+        .stars label:after {
+            content: '\2605';
+        }
+        
+        .stars label:hover:after,
+          .stars label:hover ~ label:after {
+            content: '\2606' !important;
+        }
     </style>
+
+    <script type="text/javascript">
+        var user = '{{request.user}}'
+        //If there is csrf error
+        function getToken(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i=0; i<cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getToken('csrftoken');
+    </script>
 </head>
 
 <body>
@@ -95,13 +143,13 @@
                     </div>
                 </div>
                 <div class="d-inline-flex align-items-center d-block d-lg-none">
-                    <a href="" class="btn px-0 ml-2">
+                    <a class="btn px-0 ml-2">
                         <i class="fas fa-heart text-dark"></i>
-                        <span class="badge text-dark border border-dark rounded-circle" style="padding-bottom: 2px;">0</span>
+                        <span class="badge text-dark border border-dark rounded-circle" style="padding-bottom: 2px;">{{likes_count}}</span>
                     </a>
-                    <a href="" class="btn px-0 ml-2">
+                    <a href="{% url 'cart' %}" class="btn px-0 ml-2">
                         <i class="fas fa-shopping-cart text-dark"></i>
-                        <span class="badge text-dark border border-dark rounded-circle" style="padding-bottom: 2px;">0</span>
+                        <span class="badge text-dark border border-dark rounded-circle" style="padding-bottom: 2px;">{{cart_items_count}}</span>
                     </a>
                 </div>
             </div>
@@ -300,99 +348,62 @@
     {% block script %}
     {% endblock %}
 
+    <script type="text/javascript">
+        // Add link action prepare
+        var addLinks = document.getElementsByClassName('add-to-cart')
+        for(var i=0; i<addLinks.length; i++) {
+            addLinks[i].addEventListener('click', function(e){
+                e.preventDefault()
+                var productId = this.dataset.product
+                add_cart_item(productId)
+            }); 
+        }
 
-    <script>
-        $('.addto-cart').on('click', function(e) {
-        e.preventDefault();
-        var product_id = $(this).attr('data-product-id');
-        var quantity = $(this).closest('.product-item').find('.quantity').val();
-        $.ajax({
-            url: 'edit_cart_item/',
-            type: 'POST',
-            data: {'product_id': product_id, 'quantity': quantity},
-            dataType: 'json',
-            success: function(data) {
-                $('#cart-total').html(data.cart_total);
-                $('#cart-items').html(data.cart_items);
-            }
-        });
-    });
+        // The add action callback
+        function add_cart_item(productId, quantity=1, erase=false) {
+            var url = '/cart/add'
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    'productId': productId,
+                    'quantity': quantity,
+                    'erase': erase
+                })
+            })
+            .then((response) => {
+                return response.json()
+            })
+            .then((data) => {
+                console.log('data:', data)
+                location.reload()
+            });
+        }
+    
+        function like_product(product_id) {
+            var url = '/like/'
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    'id': product_id, 
+                })
+            })
+            .then((response) => {
+                return response.json()
+            })
+            .then((data) => {
+                //console.log('data:', data)
+                location.reload()
+            });
+        }
     </script>
-    {% comment %} <script>
-    // Fonction pour ajouter un produit au panier
-    function addToCart(product_id) {
-        // Envoie une requête POST pour ajouter le produit au panier
-        $.ajax({
-            url: "edit_cart_item/<int:id_product>",
-            type: "POST",
-            data: {
-                'product_id': product_id,
-                'quantity': 1,
-            },
-            success: function(response) {
-                // Met à jour le contenu du panier
-                $('#cart-items').html(response.cart_items);
-                $('#cart-total').html(response.cart_total);
-            },
-            error: function(xhr, status, error) {
-                console.log(error);
-            }
-        });
-    }
-
-    // Fonction pour mettre à jour le contenu du panier
-    function updateCart() {
-        // Envoie une requête GET pour récupérer le contenu du panier
-        $.ajax({
-            url: "cart/",
-            type: "GET",
-            success: function(response) {
-                // Met à jour le contenu de la vue cart
-                $('#cart-items').html(response.items);
-                $('#cart-total').html(response.total);
-            },
-            error: function(xhr, status, error) {
-                console.log(error);
-            }
-        });
-    }
-
-    // Événement de clic sur le bouton "Ajouter au panier"
-    $('a.add-to-cart').click(function(e) {
-        e.preventDefault();
-        var product_id = $(this).data('product-id');
-        addToCart(product_id);
-    });
-</script> {% endcomment %}
-<script>
-    // Sélectionnez tous les boutons "like"
-const likeButtons = document.querySelectorAll('.btn-like');
-
-// Attachez un gestionnaire d'événements "click" à chaque bouton "like"
-likeButtons.forEach(button => {
-    button.addEventListener('click', () => {
-    // Récupérez l'ID du produit
-    const productId = button.getAttribute('data-product-id');
-
-    // Envoie une requête AJAX à la vue "like" de Django pour enregistrer le like
-    fetch(`/like/?product_id=${productId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email: 'user@example.com', // Remplacez par l'adresse e-mail de l'utilisateur
-        }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Afficher une notification ou une autre réponse à l'utilisateur
-        })
-        .catch(error => console.error(error));
-    });
-    });
-</script>
-
 </body>
 
 </html>

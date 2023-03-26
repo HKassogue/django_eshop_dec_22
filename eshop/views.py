@@ -1,59 +1,36 @@
 from datetime import datetime
 from django.shortcuts import get_object_or_404, render, redirect
-from django.http import HttpResponse, JsonResponse
-from .models import Arrival, Arrival_details, Like, Product, Order, Order_details, Customer
-from .models import Product, Category, Order, Order_details, Customer,Coupon
+from django.http import JsonResponse
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views import View
-from eshop.forms import CheckOutForm
-from .models import Delivery, Payments, Product, Category, Order, Order_details, Customer
-from.context_processors import *
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
-from .models import Product, Category, Order, Order_details, Customer, Filter_Price
+from .context_processors import *
+from .forms import CheckOutForm
+from .models import *
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from datetime import datetime
+import json
 
 
 # Create your views here.
 def index(request):
-    products = Product.objects.all()
-    
-    current_time = datetime.now()
-    upcoming_arrivals = Arrival.objects.filter(closed_at__gt=current_time, is_closed=False)
-    produits = []
-    for arrival in upcoming_arrivals:
-        arrival_details = arrival.arrival_details_set.all()
-        for detail in arrival_details:
-            product = detail.product
-            quanti = detail.quantity
-            image = product.first_image
-            price = product.price
-            day = arrival.closed_at
-            nam = product.name
-            produits.append((product, quanti, image, price,nam,day))
-    context =  { 'produits': produits,
+    products = Product.objects.filter(active=True).order_by('name')[:12]
+    arrivals = Arrival.objects.filter(is_closed=False)
+    arrivals_details = []
+    for arrival in arrivals:
+        arrivals_details += list(Arrival_details.objects.filter(arrival=arrival))
+    context = {
         'products': products,
-        
-        
+        'arrivals_details': arrivals_details
     }
-
     if request.user.is_authenticated:
         try:
             customer = Customer.objects.get(user=request.user)
-            order = Order.objects.filter(customer_id=customer.id, completed=False).first()
-            
+            order = Order.objects.filter(customer=customer, completed=False).first()
             if order:
-                order_details = Order_details.objects.get(order_id=order.id)
+                order_details = Order_details.objects.get(order=order)
                 cart = request.session.get('cart', {})
                 for item in order_details:
                     key = str(item.product.id)
@@ -66,7 +43,6 @@ def index(request):
                     cart[str(item.product.id)] = item.quantity
         except ObjectDoesNotExist:
             pass
-
     return render(request, "eshop/index.html", context)
 
 
@@ -75,35 +51,31 @@ def shop(request, cat='all'):
     perpage = request.GET.get('per', 6)
     sort = request.GET.get('sort', 'latest')
     query = request.GET.get('q', '')
-# filter_price get
     filter_Price = Filter_Price.objects.all()
-
     if cat == 'all':
         if not query:
             if sort == 'latest':
-                products = Product.objects.all()
+                products = Product.objects.filter(active=True)
             elif sort == 'popular':
-                products = Product.objects.all().annotate(
+                products = Product.objects.filter(active=True).annotate(
                     nbr_likes=Count('likes')).order_by('-nbr_likes')
             else:
-                products = Product.objects.all().annotate(
+                products = Product.objects.filter(active=True).annotate(
                     nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
         else:
-            products = Product.objects.filter(name__icontains=query)
+            products = Product.objects.filter(name__icontains=query, active=True)
     else:
         if not query:
             if sort == 'latest':
-                products = Product.objects.filter(category__slug=cat)
+                products = Product.objects.filter(category__slug=cat, active=True)
             elif sort == 'popular':
-                products = Product.objects.filter(category__slug=cat).annotate(
+                products = Product.objects.filter(category__slug=cat, active=True).annotate(
                     nbr_likes=Count('likes')).order_by('-nbr_likes')
             else:
-                products = Product.objects.filter(category__slug=cat).annotate(
+                products = Product.objects.filter(category__slug=cat, active=True).annotate(
                     nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews')
-
         else:
-            products = Product.objects.filter(
-                category__slug=cat).filter(name__icontains=query)
+            products = Product.objects.filter(category__slug=cat, active=True).filter(name__icontains=query)
 
     paginator = Paginator(products, perpage)
     try:
@@ -119,15 +91,16 @@ def shop(request, cat='all'):
     }
     return render(request, "eshop/shop.html", context)
 
+
 @csrf_exempt
 def product(request):
     #product =  Product.objects.filter(name__icontains="testh")
     product =  Product.objects.all()        
     data=list(product.values())
     for i in range(len(product)):
-        data[i]['first_image'] = product[i].first_image
-    
+        data[i]['first_image'] = product[i].first_image    
     return JsonResponse(data,safe=False)
+
 
 def search(request):
     query = request.GET.get('q', '')
@@ -167,7 +140,17 @@ def check(request):
 
 def detail(request, id):
     product = Product.objects.get(id=id)
-    sim_products = Product.objects.filter(category=product.category).filter(active=True)
+    sim_products = list(Product.objects.filter(category=product.category, active=True).filter(active=True)[:5])
+    best_liked = list(Product.objects.filter(active=True).annotate(nbr_likes=Count('likes')).order_by('-nbr_likes'))
+    for prod in sim_products:
+        if prod in best_liked:
+            best_liked.remove(prod)
+    sim_products += best_liked[:5]
+    best_rated = list(Product.objects.filter(active=True).annotate(nbr_reviews=Count('reviews__rate')).order_by('-nbr_reviews'))
+    for prod in sim_products:
+        if prod in best_rated:
+            best_rated.remove(prod)
+    sim_products += best_rated[:5]
 
     context = {
         'product': product,
@@ -196,6 +179,7 @@ def cart(request):
             total += qty * product.price
     return render(request,"eshop/cart.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping, 'coupon': coupon})
 
+
 def checkout(request):
     form = CheckOutForm()
     cart = request.session.get('cart', {})
@@ -217,6 +201,8 @@ def checkout(request):
             'form':form
         }
     return render(request,"eshop/checkout.html", context)
+
+
 def add_delivery(request):
     if request.user.is_authenticated:
         customer = Customer.objects.get(user=request.user)
@@ -251,24 +237,33 @@ def add_delivery(request):
                 return render(request, 'eshop/shop.html')    
     return render(request, "eshop/cart.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping, 'coupon': coupon})
 
-def checkout(request):
-    return render(request,"eshop/checkout.html", {})
+
+def review(request):
+    data = json.loads(request.body)
+    product = Product.objects.get(id=int(data['productId']))
+    rate = data['rate']
+    comment = data['comment']
+    name = data['name']
+    email = data['email']
+    Review(product=product, rate=rate, comment=comment, name=name, email=email).save()
+    # return redirect('detail', id=id)
+    # return redirect(request.META.get('HTTP_REFERER', '/'))
+    response = {
+        "status": "202", 
+        "message": "review succefull!",
+        "data": f"{product.id} => {rate}"
+    }
+    return JsonResponse(response, safe=False)
 
 
-def login(request):
-    return render(request, "eshop/login.html")
-
-
-def edit_order_item(request, id_product):
+def add_to_cart(request):
     cart = request.session.get('cart', {})
-    id_product = str(id_product)
-
-    if request.method == "POST":
-        quantity = int(request.POST['qty'])
-    else:
-        quantity = 1
-
-    if id_product in cart:
+    data = json.loads(request.body)
+    id_product = data['productId']
+    quantity = int(data['quantity'])
+    erase = bool(data['erase'])
+    
+    if id_product in cart and not erase:
         cart[id_product] += quantity
         if cart[id_product] <= 0:
             del cart[id_product]
@@ -276,7 +271,13 @@ def edit_order_item(request, id_product):
         cart[id_product] = quantity
     request.session['cart'] = cart
     request.session.modified = True
-    return redirect(request.META.get('HTTP_REFERER'))
+    response = {
+        "status": "202", 
+        "message": "add succefull!",
+        "data": f"{id_product} x {quantity}"
+    }
+    return JsonResponse(response, safe=False)
+
 
 @csrf_exempt
 def decreace_increase(request):
@@ -286,17 +287,14 @@ def decreace_increase(request):
         quantity = int(request.GET.get('qty'))
         id_product = int(request.GET.get('id_product')) 
         id_product = str(id_product)
-
     else:
         quantity = 0
-
     if id_product in cart:
         cart[id_product] += quantity
         product = Product.objects.get(id=id_product)
         data = quantity * product.price
         if cart[id_product] <= 0 :
             del cart[id_product]
-
     else:
         cart[id_product] = quantity
     request.session['cart'] = cart
@@ -305,14 +303,13 @@ def decreace_increase(request):
         "status":"202","message":"update succefull!","data":data
     })
 
+
 @csrf_exempt
 def del_in_cart(request):
     cart = request.session.get('cart', {})
-
     if request.method == "GET":
         id_product = int(request.GET.get('id_product')) 
         id_product = str(id_product)
-
     if id_product in cart:
         if cart[id_product] :
             del cart[id_product]
@@ -324,6 +321,7 @@ def del_in_cart(request):
     return JsonResponse({
                     "status":"400","message":"error update!"
                 })
+
 
 @csrf_exempt
 def coupons(request):
@@ -341,6 +339,7 @@ def coupons(request):
                "status":"404","message":"Not found!", 
             }
     return JsonResponse(jsonResponse)
+
 
 @csrf_exempt
 def proceedCheckout(request):
@@ -366,7 +365,7 @@ def proceedCheckout(request):
                 if id > 0:
                     product = Product.objects.get(id=id)
                     if product.stock > qty:
-                        order_detail = Order_details(order_id= order.id,product_id=product.id,quantity=qty,price = product.price)
+                        order_detail = Order_details(order=order, product=product, quantity=qty, price=product.price)
                         order_detail.save()
                         product.stock = product.stock - qty
                         product.save()
@@ -387,9 +386,9 @@ def proceedCheckout(request):
     return JsonResponse(jsonResponse)
 
 
-
 import secrets
 import string
+
 
 def generate_code():
     alphabet = string.ascii_uppercase + string.ascii_lowercase + string.digits
@@ -399,42 +398,36 @@ def generate_code():
             break
     return code
 
-def like_product(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    email = request.POST.get('email') # récupérer l'adresse e-mail de l'utilisateur connecté ou d'un cookie
-    liked = request.POST.get('liked', 'true') == 'true'
-    Like.objects.update_or_create(email=email, product=product, defaults={'liked': liked})
-    like_count = product.likes.filter(liked=True).count()
-    return JsonResponse({'liked': liked, 'like_count': like_count})
 
 def like(request):
-    if request.method == 'POST':
-        product_id = request.POST.get('product.id')
-        email = request.POST.get('email')
-        
+    data = json.loads(request.body)
+    id = data['id']
+    product = get_object_or_404(Product, id=int(id))
+    likes = request.session.get('likes', {})
+    if request.user.is_authenticated:
+        email = request.user.email
         # Vérifiez si l'utilisateur a déjà aimé le produit
-        like, created = Like.objects.get_or_create(product_id=product_id, email=email)
-        
+        like, created = Like.objects.get_or_create(product=product, email=email)
         if not created:
             like.liked = not like.liked
             like.save()
-            
-        # Mettre à jour le nombre de likes dans le modèle de produit
-        product = Like.objects.get(id=product_id)
-        product.likes = product.likes_count()
-        product.save()
-        
-        # Retourner une réponse JSON avec le nombre de likes mis à jour
-        data = {'likes': product.likes}
-        return JsonResponse(data)
-@require_POST
-def add_to_cart(request, product_id):
-    product = Product.objects.get(id=product_id)
-    cart = request.session.get('cart', {})
-    cart[product_id] = cart.get(product_id, 0) + 1
-    request.session['cart'] = cart
-    return redirect('cart')
-
+        likes[id] = like.liked
+    else:
+        email = "anonymoususer@mail.com"
+        if id in likes:
+            likes[id] = not likes[id]
+        else:
+            like = Like.objects.create(product=product, email=email)
+            likes[id] = like.liked
+    request.session['likes'] = likes
+    request.session.modified = True
+    # return redirect(request.META.get('HTTP_REFERER'))
+    data = {
+        "status": "202", 
+        "message": "like/unlike succefull!",
+        "data": id
+    }
+    return JsonResponse(data, safe=False)
 
 
 # def filtered_products(request):
@@ -449,6 +442,7 @@ def add_to_cart(request, product_id):
 #     # passer les produits filtrés au contexte de la vue
 #     context = {'products': products}
 #     return render(request, 'products.html', context)
+
 
 def filtered_products(request):
     query = request.GET.get('q', '')
