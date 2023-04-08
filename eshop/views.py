@@ -51,7 +51,34 @@ def shop(request, cat='all'):
     perpage = request.GET.get('per', 6)
     sort = request.GET.get('sort', 'latest')
     query = request.GET.get('q', '')
-    filter_Price = Filter_Price.objects.all()
+    price_brackets = Filter_Price.objects.all()
+    if request.method == 'POST':
+        price_bracket = request.POST['price']
+        price_min = request.POST['price_min']
+        price_max = request.POST['price_max']
+        # print('price=', price_bracket)
+        # print('price min', price_min)
+        # print('price max', price_max)
+        if price_bracket != 'all':
+            price_bracket = Filter_Price.objects.get(id=int(price_bracket))
+            price_min = price_bracket.min
+            price_max = price_bracket.max
+        elif price_min and price_max:
+            price_min = float(price_min)
+            price_max = float(price_max)
+        elif price_min:
+            price_min = float(price_min)
+            price_max = 'inf'
+        elif price_max:
+            price_min = 0.0
+            price_max= float(price_max)
+        else:
+            price_min = 0.0
+            price_max = 'inf'
+    else:
+        price_min = 0.0
+        price_max = 'inf'
+    
     if cat == 'all':
         if not query:
             if sort == 'latest':
@@ -77,17 +104,23 @@ def shop(request, cat='all'):
         else:
             products = Product.objects.filter(category__slug=cat, active=True).filter(name__icontains=query)
 
+    products = list(products)
+    if price_min > 0.0:
+        products = [product for product in products if product.price >= price_min]
+    if price_max != 'inf':
+        products = [product for product in products if product.price <= price_max]
+    
     paginator = Paginator(products, perpage)
     try:
-        produit = paginator.page(page)
+        products = paginator.page(page)
     except PageNotAnInteger:
-        produit = paginator.page(1)
+        products = paginator.page(1)
     except EmptyPage:
-        produit = paginator.page(paginator.num_pages)
+        products = paginator.page(paginator.num_pages)
 
     context = {
-        'products': produit,
-        'filter_Price': filter_Price,
+        'products': products,
+        'price_brackets': price_brackets,
     }
     return render(request, "eshop/shop.html", context)
 
@@ -123,19 +156,6 @@ def search(request):
          'products' : products,
     }
     return render(request, "eshop/shop.html", context)
-
-
-@csrf_exempt
-def check(request):
-    if request.method == "GET":
-        price = int(request.GET.get('price'))
-
-    product = Product.objects.filter(price__lte=price)
-    data = list(product.values())
-    for i in range(len(product)):
-        data[i]['first_image'] = product[i].first_image
-
-    return JsonResponse(data, safe=False)
 
 
 def detail(request, id):
@@ -428,40 +448,3 @@ def like(request):
         "data": id
     }
     return JsonResponse(data, safe=False)
-
-
-# def filtered_products(request):
-#     min_price = request.GET.get('min_price')
-#     max_price = request.GET.get('max_price')
-
-#     # filtrer les produits en conséquence
-#     products = Product.objects.all()
-#     if min_price and max_price:
-#         products = products.filter(price=min_price)
-
-#     # passer les produits filtrés au contexte de la vue
-#     context = {'products': products}
-#     return render(request, 'products.html', context)
-
-
-def filtered_products(request):
-    query = request.GET.get('q', '')
-    if not query:
-        return redirect('shop')
-
-    page = request.GET.get('page', 1)
-    perpage = request.GET.get('per', 6)
-    products = Product.objects.filter(price__icontains=query)
-
-    paginator = Paginator(products, perpage)
-    try:
-        products = paginator.page(page)
-    except PageNotAnInteger:
-        products = paginator.page(1)
-    except EmptyPage:
-        products = paginator.page(paginator.num_pages)
-
-    context = {
-        'products': products,
-    }
-    return render(request, "eshop/shop.html", context)

@@ -262,5 +262,18 @@ class Faqs(models.Model):
     def __str__(self):
         return f"{self.question}"
 
+
 class Filter_Price(models.Model):
-    price = models.CharField(max_length=50, choices=[('0 - 1000', '0 - 1000'), ('1000 - 2000', '1000 - 2000'), ('2000 - 3000', '2000 - 3000'), ('3000 - 4000', '3000 - 4000'), ('4000 - 5000', '4000 - 5000'), ('5000 - 10000', '5000 - 10000')])
+    min = models.FloatField(null=True, blank=False)
+    max = models.FloatField(null=True, blank=False)
+
+    class Meta:
+        verbose_name = 'Price bracket'
+        ordering = ['min', 'max']
+
+    def __str__(self):
+        return f"{self.min} - {self.max}"
+    
+    @property
+    def products_count(self):
+        return Product.objects.filter(active=True, price__gte=self.min, price__lte=self.max).count()
