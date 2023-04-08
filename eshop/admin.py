@@ -173,7 +173,8 @@ class PaymentsAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'slug', 'category', 'price', 'stock', 'active']
+    list_display = ['id', 'name', 'category', 'price', 'stock', 'active']
+    list_display_links = ['id', 'name']
     prepopulated_fields = {'slug': ('name',)}
     autocomplete_fields = ['category']
     search_fields = ['name', 'id']
