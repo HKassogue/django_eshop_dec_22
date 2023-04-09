@@ -91,10 +91,10 @@
                             <h5>Total</h5>
                             <h5 >$<span id="total">{{total|add:shipping|add:coupon}}</span></h5>
                         </div>
-                        <button onclick = "proceedCheckout()" class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</button>
+                        <button onclick="proceedCheckout()" class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</button>
                     </div>
                 </div>
-            </div>>
+            </div>
         </div>
     </div>
     <!-- Cart End -->
@@ -280,7 +280,7 @@
         });
     }
 
-    function proceedCheckout(prd) {
+    function proceedCheckout() {
         var coupon_code = $('#coupon_code').val();
         $.ajax({
             url: "{% url 'proceedCheckout'  %}",
@@ -292,9 +292,9 @@
                 if(data.status == "202"){
                     window.location.assign("{% url 'checkout'  %}")
                 }else if(data.status = "401"){
-                    $.notify("Impossible panier vide.", "error");
+                    $.notify("Impossible, panier vide.", "error");
                 }else if(data.status = "402"){
-                    $.notify("Impossible vous n'été  pas connecter.", "error");
+                    $.notify("Impossible, vous n'êtes pas connecté.", "error");
                 }
             },
             error: function(error){

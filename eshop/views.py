@@ -1,4 +1,4 @@
-from datetime import datetime
+from django.utils import timezone
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import JsonResponse
 from django.conf import settings
@@ -348,7 +348,7 @@ def coupons(request):
     if request.method == "GET":
         jsonResponse = {}
         code_coupon = request.GET.get('code')
-        coupon = Coupon.objects.filter(code = code_coupon).filter(validity__gte=datetime.now()).filter(is_valid = True).filter(max_usage__gt=0)
+        coupon = Coupon.objects.filter(code=code_coupon).filter(validity__gte=timezone.now()).filter(is_valid = True).filter(max_usage__gt=0)
         if coupon:
             data=list(coupon.values())
             jsonResponse = {
@@ -372,7 +372,7 @@ def proceedCheckout(request):
             order = Order(reference=reference,customer=customer)
             if request.method == "GET":
                 code_coupon = request.GET.get('code')
-                coupon = Coupon.objects.filter(code = code_coupon).filter(validity__gte=datetime.now()).filter(is_valid = True).filter(max_usage__gt=0).first()
+                coupon = Coupon.objects.filter(code=code_coupon).filter(validity__gte=timezone.now()).filter(is_valid=True).filter(max_usage__gt=0).first()
                 if coupon:
                     order.coupon_id = coupon.id
                     coupon.max_usage = coupon.max_usage - 1
