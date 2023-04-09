@@ -35,7 +35,7 @@
                     <tbody class="align-middle">
                         {% for product, quantity in items %}
                         <tr id="prd_{{ product.id }}">
-                            <td class="align-middle"><img src="{{product.first_image}}" alt="{{product.name}}" style="width: 50px;"> {{product.name}}</td>
+                            <td class="align-middle" style="text-align: left;"><img src="{{product.first_image}}" alt="{{product.name}}" style="width: 50px;"> {{product.name}}</td>
                             <td class="align-middle">${{product.price}}</td>
                             <td class="align-middle">
                                 <div class="input-group quantity mx-auto" style="width: 100px;">
@@ -291,9 +291,9 @@
                 //console.log(data.status)
                 if(data.status == "202"){
                     window.location.assign("{% url 'checkout'  %}")
-                }else if(data.status = "401"){
+                }else if(data.status == "401"){
                     $.notify("Impossible, panier vide.", "error");
-                }else if(data.status = "402"){
+                }else if(data.status == "402"){
                     $.notify("Impossible, vous n'êtes pas connecté.", "error");
                 }
             },

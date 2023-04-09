@@ -9,7 +9,7 @@ from .forms import CheckOutForm
 from .models import *
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Count
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.views.decorators.csrf import csrf_exempt
 import json
 
@@ -28,7 +28,7 @@ def index(request):
     if request.user.is_authenticated:
         try:
             customer = Customer.objects.get(user=request.user)
-            order = Order.objects.filter(customer=customer, completed=False).first()
+            order = Order.objects.get(customer=customer, completed=False)
             if order:
                 order_details = Order_details.objects.get(order=order)
                 cart = request.session.get('cart', {})
@@ -38,10 +38,10 @@ def index(request):
                         cart[key] += item.quantity
                     else :
                         cart[key] = item.quantity
-                    request.session['cart'] = cart
-                    request.session.modified = True
-                    cart[str(item.product.id)] = item.quantity
-        except ObjectDoesNotExist:
+                request.session['cart'] = cart
+                request.session.modified = True
+                cart[str(item.product.id)] = item.quantity
+        except (ObjectDoesNotExist, MultipleObjectsReturned):
             pass
     return render(request, "eshop/index.html", context)
 
@@ -56,9 +56,6 @@ def shop(request, cat='all'):
         price_bracket = request.POST['price']
         price_min = request.POST['price_min']
         price_max = request.POST['price_max']
-        # print('price=', price_bracket)
-        # print('price min', price_min)
-        # print('price max', price_max)
         if price_bracket != 'all':
             price_bracket = Filter_Price.objects.get(id=int(price_bracket))
             price_min = price_bracket.min
@@ -70,13 +67,13 @@ def shop(request, cat='all'):
             price_min = float(price_min)
             price_max = 'inf'
         elif price_max:
-            price_min = 0.0
+            price_min = 0
             price_max= float(price_max)
         else:
-            price_min = 0.0
+            price_min = 0
             price_max = 'inf'
     else:
-        price_min = 0.0
+        price_min = 0
         price_max = 'inf'
     
     if cat == 'all':
@@ -105,7 +102,7 @@ def shop(request, cat='all'):
             products = Product.objects.filter(category__slug=cat, active=True).filter(name__icontains=query)
 
     products = list(products)
-    if price_min > 0.0:
+    if price_min > 0:
         products = [product for product in products if product.price >= price_min]
     if price_max != 'inf':
         products = [product for product in products if product.price <= price_max]
@@ -364,44 +361,51 @@ def coupons(request):
 @csrf_exempt
 def proceedCheckout(request):
     cart = request.session.get('cart', {})
-    order_id = 0
     if cart:
-        customer = Customer.objects.get(user=request.user)
-        if customer :
-            reference = generate_code()
-            order = Order(reference=reference,customer=customer)
-            if request.method == "GET":
-                code_coupon = request.GET.get('code')
-                coupon = Coupon.objects.filter(code=code_coupon).filter(validity__gte=timezone.now()).filter(is_valid=True).filter(max_usage__gt=0).first()
-                if coupon:
-                    order.coupon_id = coupon.id
-                    coupon.max_usage = coupon.max_usage - 1
-                    coupon.save()
-
-            order.save()
-            order_id = order.id
-            for id, qty in cart.items():
-                id = int(id)
-                if id > 0:
-                    product = Product.objects.get(id=id)
-                    if product.stock > qty:
-                        order_detail = Order_details(order=order, product=product, quantity=qty, price=product.price)
-                        order_detail.save()
-                        product.stock = product.stock - qty
-                        product.save()
-
-            del request.session['cart']
-            request.session.modified = True
-            jsonResponse = {
-                "status":"202","message":"update succefull!","data" : order_id
-            }
+        if request.user.is_authenticated:
+            try:
+                customer = Customer.objects.get(user=request.user)
+                order, created = Order.objects.get_or_create(customer=customer, completed=False)
+                if created:
+                    order.reference = generate_code()
+                if request.method == "GET":
+                    code_coupon = request.GET.get('code')
+                    coupon = Coupon.objects.filter(code=code_coupon, validity__gte=timezone.now(), is_valid=True, max_usage__gt=0).first()
+                    if coupon:
+                        order.coupon = coupon
+                        coupon.max_usage -= 1
+                        coupon.save()
+                order.save()
+                for id, qty in cart.items():
+                    id = int(id)
+                    if id > 0:
+                        product = Product.objects.get(id=id)
+                        if product.stock == 0:
+                            if Order_details.objects.filter(order=order, product=product).exists():
+                                Order_details.objects.filter(order=order, product=product).delete()
+                            continue
+                        else:
+                            if product.stock < qty:
+                                qty = product.stock  # on attribuera le stock disponible si rupture de stock
+                            # product.stock = product.stock - qty  # on réduira le stock que lorsque la commande sera payée.
+                            # product.save()
+                            Order_details.objects.update_or_create(order=order, product=product, defaults={'quantity': qty, 'price': product.price})
+                request.session['cart'] = {}
+                request.session.modified = True
+                jsonResponse = {
+                    "status": "202", "message": "update succefull!", "data": order.id
+                }
+            except (ObjectDoesNotExist, MultipleObjectsReturned):
+                jsonResponse = {
+                    "status": "402", "message": "Customer most be connected!", "data": 0
+                }
         else:
             jsonResponse = {
-                "status":"402","message":"Customer not connect!","data" : order_id
+                "status": "402", "message": "Customer not connected!", "data": 0
             }
     else:
         jsonResponse = {
-            "status":"401","message":"Cart empty!","data" : order_id
+            "status": "401", "message": "Cart empty!", "data": 0
         }
     return JsonResponse(jsonResponse)
 
