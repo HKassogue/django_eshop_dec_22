@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.safestring import mark_safe
 from django_countries.fields import CountryField
 
+
 # Create your models here.
 class Product(models.Model):
     name = models.CharField(max_length=50, null=False, blank=False, unique=True)
@@ -44,6 +45,7 @@ class Product(models.Model):
     @property
     def likes_total(self):
         return self.likes.filter(liked=True).count()
+
 
 class Image(models.Model):
     name = models.ImageField(null=True, blank=True, upload_to='images/products/')
@@ -101,6 +103,8 @@ class Customer(models.Model):
     address = models.CharField(max_length=30, null=True, blank=True)
     zipcode = models.CharField(max_length=6, null=True, blank=True)
     city = models.CharField(max_length=30, null=True, blank=True)
+    country = models.CharField(max_length=20, null=True, blank=True)
+    tel = models.CharField(max_length=20, null=True, blank=True)
 
     def avatar_tag(self):
         return mark_safe('<img src="/media/{url}" width="{width}" height={height} />'.format(
@@ -129,6 +133,7 @@ class Review(models.Model):
             return customer.avatar.url
         return ''
 
+
 class Like(models.Model):
     email = models.CharField(max_length=30, null=False, blank=False)
     liked = models.BooleanField(default=True, null=False, blank=False)
@@ -137,7 +142,6 @@ class Like(models.Model):
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
     def __str__(self):
         return f"{self.id}"
-
 
 
 class Coupon_type(models.Model):
@@ -159,7 +163,6 @@ class Coupon(models.Model):
         return f"{self.code}"
 
 
-
 class Order(models.Model):
     reference = models.CharField(max_length=30, null=False, blank=False, unique=True)
     coupon = models.ForeignKey('Coupon', null=True, blank=True, on_delete=models.SET_NULL, 
@@ -170,11 +173,31 @@ class Order(models.Model):
     products = models.ManyToManyField('Product', through='Order_details', related_name='orders')
     completed = models.BooleanField(default=False, null=True, blank=False)
     
-    def get_total (self):
-        total = 0
-        for order_item in self.products.all():
-            total += order_item.get_total_price()
-        return total
+    @property
+    def get_total(self):
+        return self.subtotal + self.shipping - self.reduction
+    
+    @property
+    def shipping(self):
+        # from django.db.models import Sum
+        # if self.deliveries.all():
+        #     return self.deliveries.all().aggregate(sum=Sum('price'))['sum']
+        return 10
+    
+    @property
+    def subtotal(self):
+        items = Order_details.objects.filter(order=self)
+        return sum([item.price * item.quantity for item in items])
+    
+    @property
+    def reduction(self):
+        if self.coupon:
+            if self.coupon.coupon_type.id == 1:
+                return self.subtotal * self.coupon.discount / 100
+            else:
+                return self.coupon.discount
+        return 0
+        
     @property
     def order_details(self):
        if self.Order_details.all():
@@ -197,7 +220,6 @@ class Order_details(models.Model):
         return self.quantity * self.price
 
 
-
 class Arrival(models.Model):
     created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
     closed_at = models.DateTimeField(null=True, blank=True)
@@ -206,12 +228,14 @@ class Arrival(models.Model):
     def __str__(self):
         return f"{self.id} on {self.created_at}"
     
+
 class Arrival_details(models.Model):
     arrival = models.ForeignKey('Arrival', null=True, blank=False, on_delete=models.SET_NULL)
     product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
     quantity = models.SmallIntegerField(default=1, null=True, blank=True)
     def __str__(self):
         return f"{self.arrival.id} : {self.product.name} x {self.quantity}"
+
 
 class Delivery(models.Model):
     address = models.CharField(max_length=30, null=False, blank=False)
@@ -228,6 +252,7 @@ class Delivery(models.Model):
     def __str__(self):
         return f"{self.id}"
 
+
 class Payments(models.Model):
     ref = models.CharField(max_length=30, null=False, blank=False, unique=True)
     payed_at = models.DateTimeField(null=False, blank=False, auto_now=True)
@@ -237,7 +262,6 @@ class Payments(models.Model):
 
     def __str__(self):
         return f"{self.ref}"
-
 
 
 class Alerts(models.Model):

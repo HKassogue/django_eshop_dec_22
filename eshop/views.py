@@ -209,25 +209,20 @@ def cart(request):
 @login_required(login_url='login')
 def checkout(request):
     form = CheckOutForm()
-    cart = request.session.get('cart', {})
-    products = []
-    quantities = []
-    total = 0
-    shipping = 10
-    coupon = 0
-    for id, qty in cart.items():
-        product = Product.objects.get(id=int(id))
-        products.append(product)
-        quantities.append(qty)
-        total += qty * product.price
-    context = {
-        
-        'items': zip(products,quantities),
-        'total': total,
-        'shipping': shipping,
-        'form':form
-    }
-    return render(request,"eshop/checkout.html", context)
+    try:
+        customer = Customer.objects.get(user=request.user)
+        order = Order.objects.get(customer=customer, completed=False)
+        items = Order_details.objects.filter(order=order)
+        context = {
+            'order': order,
+            'items': items,
+            'customer': customer,
+            'form':form
+        }
+        return render(request,"eshop/checkout.html", context)
+    except (ObjectDoesNotExist, MultipleObjectsReturned):
+        # redirect(request.META.get('HTTP_REFERER', '/'))
+        redirect('cart')
 
 
 def add_delivery(request):
