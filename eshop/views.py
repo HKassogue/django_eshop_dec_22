@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .context_processors import *
 from .forms import CheckOutForm
@@ -30,7 +31,7 @@ def index(request):
             customer = Customer.objects.get(user=request.user)
             order = Order.objects.get(customer=customer, completed=False)
             if order:
-                order_details = Order_details.objects.get(order=order)
+                order_details = Order_details.objects.filter(order=order)
                 cart = request.session.get('cart', {})
                 for item in order_details:
                     key = str(item.product.id)
@@ -186,7 +187,7 @@ def cart(request):
     quantities = []
     total = 0
     shipping = 10
-    coupon = 0
+    coupon = None
     for id, qty in cart.items():
         id = int(id)
         if id > 0:
@@ -194,9 +195,18 @@ def cart(request):
             products.append(product)
             quantities.append(qty)
             total += qty * product.price
+    if request.user.is_authenticated:
+        try:
+            customer = Customer.objects.get(user=request.user)
+            order = Order.objects.get(customer=customer, completed=False)
+            if order and order.coupon:
+                coupon = order.coupon
+        except (ObjectDoesNotExist, MultipleObjectsReturned):
+            pass
     return render(request,"eshop/cart.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping, 'coupon': coupon})
 
 
+@login_required(login_url='login')
 def checkout(request):
     form = CheckOutForm()
     cart = request.session.get('cart', {})
@@ -210,13 +220,13 @@ def checkout(request):
         products.append(product)
         quantities.append(qty)
         total += qty * product.price
-        context = {
-            
-            'items': zip(products,quantities),
-            'total': total,
-            'shipping': shipping,
-            'form':form
-        }
+    context = {
+        
+        'items': zip(products,quantities),
+        'total': total,
+        'shipping': shipping,
+        'form':form
+    }
     return render(request,"eshop/checkout.html", context)
 
 

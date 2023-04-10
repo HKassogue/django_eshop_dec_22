@@ -64,7 +64,7 @@
             <div class="col-lg-4">
                 <form class="mb-30" action="">
                     <div class="input-group">
-                        <input id="coupon_code" type="text" class="form-control border-0 p-4" placeholder="Coupon Code">
+                        <input id="coupon_code" type="text" class="form-control border-0 p-4" placeholder="Coupon Code" {% if coupon %}value="{{coupon.code}}"{% endif %}>
                         <div class="input-group-append">
                             <button class="btn btn-primary" type='button' id="coupons">Apply Coupon</button>
                         </div>
@@ -82,14 +82,22 @@
                             <h6 class="font-weight-medium">${{shipping}}</h6>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <h6 class="font-weight-medium">Reduction <span id="perc_coubon"></span></h6>
-                            <h6 class="font-weight-medium">$<span id="reduction">{{coupon}}</span></h6>
+                            <h6 class="font-weight-medium">Reduction <span id="perc_coubon">{% if coupon and coupon.coupon_type.id == 1 %}{{coupon.discount}} %{% endif %}</span></h6>
+                            <h6 class="font-weight-medium">$<span id="reduction">{% if not coupon %}0{% elif coupon.coupon_type.id == 1 %}{% widthratio coupon.discount 100 total %}{% else %}{{coupon.discount}}{% endif %}</span></h6>
                         </div>
                     </div>
                     <div class="pt-2">
                         <div class="d-flex justify-content-between mt-2">
                             <h5>Total</h5>
-                            <h5 >$<span id="total">{{total|add:shipping|add:coupon}}</span></h5>
+                            {% if not coupon %}
+                                <h5 >$<span id="total">{{total|add:shipping|floatformat}}</span></h5>
+                            {% elif coupon.coupon_type.id == 1 %}
+                                {% widthratio coupon.discount -100 total as discount %}
+                                <h5 >$<span id="total">{{total|add:shipping|add:discount|floatformat}}</span></h5>
+                            {% else %}
+                                {% widthratio coupon.discount -1 1 as discount %}
+                                <h5 >$<span id="total">{{total|add:shipping|add:discount|floatformat}}</span></h5>
+                            {% endif %}
                         </div>
                         <button onclick="proceedCheckout()" class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</button>
                     </div>
