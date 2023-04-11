@@ -23,7 +23,7 @@
         {% if ms %}
         <p class="alert alert-danger">{{ms}}<p>
         {% endif %}
-        <form action="{% url 'add_delivery' %}" method="POST">
+        <form action="{% url 'add_delivery' order_id=order.id %}" method="POST">
             {% csrf_token %}
             <div class="row px-xl-5">
                 <div class="col-lg-8">
@@ -251,6 +251,4 @@
 
 </script>
 
-</script>
-
-</script> {% endblock %}
+{% endblock %}

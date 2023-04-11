@@ -225,39 +225,54 @@ def checkout(request):
         redirect('cart')
 
 
-def add_delivery(request):
-    if request.user.is_authenticated:
-        customer = Customer.objects.get(user=request.user)
-        order = Order.objects.get(customer=customer, completed=False)
-        context = {
-            'STRIPE_PUBLIC_KEY': settings.STRIPE_PUBLIC_KEY,
-            'order': order,
-        }
-        if request.POST == 'POST':
-            order = Order.objects.get(customer=customer, completed=False)
+@login_required(login_url='login')
+def add_delivery(request, order_id):
+    order = Order.objects.get(id=order_id)
+    if request.method == 'POST':
+        form = CheckOutForm(request.POST)
+        if form.is_valid():
+            # getting form data
+            email = form.cleaned_data.get('email')
+            mobile = form.cleaned_data.get('mobile')
+            address = form.cleaned_data.get('address')
+            city = form.cleaned_data.get('city')
+            country = form.cleaned_data.get('country')
+            zipcode = form.cleaned_data.get('zipcode')
+            payment_option = form.cleaned_data.get('payment_option')
+            # adding delivery info
+            Delivery.objects.create(
+                order=order,
+                mobile = mobile,
+                address = address,
+                city = city,
+                country = country,
+                zipcode = zipcode,
+                price = order.shipping,
+                state = 'Undelivered',
+            )
+            # proceeding to payment by Stripe API
             token = request.POST.get('stripeToken')
-            chargeID = stripe_payment(settings.STRIPE_SECRET_KEY,token, order.get_total(),str(order.id))
-            form = CheckOutForm(request.POST)
-            if form.is_valid():
-                address = form.cleaned_data.get('address')
-                mobile = form.cleaned_data.get('mobile')
-                country = form.cleaned_data.get('country')
-                city = form.cleaned_data.get('city')
-                state = form.cleaned_data.get('state')
-                zipcode = form.cleaned_data.get('zipcode')
-                delivery = Delivery(
-                    address = address,
-                    mobile = mobile,
-                    country = country,
-                    city = city,
-                    price = order.products.price,
-                    delivery_by = chargeID,
-                    state = state,
-                    zipcode = zipcode,
+            chargeID = stripe_payment(settings.STRIPE_SECRET_KEY, token, order.get_total, str(order.id))
+            # if payment success
+            if chargeID:
+                # adding payment info
+                Payments.objects.create(
+                    ref=generate_ref(),
+                    mode=payment_option,
+                    detail=str(chargeID),
+                    order=order
                 )
-                delivery.save()
-                return render(request, 'eshop/shop.html')    
-    return render(request, "eshop/cart.html", {'items': zip(products, quantities), 'total': total, 'shipping': shipping, 'coupon': coupon})
+                # updating products stock and completing order
+                for item in Order_details.objects.filter(order=order):
+                    item.product.stock -= item.quantity
+                    item.product.save()
+                order.completed = True
+                order.save()
+                # send an email
+            else:
+                # display failure information
+                pass
+    return redirect('checkout')
 
 
 def review(request):
@@ -424,6 +439,15 @@ def generate_code():
     while True:
         code = ''.join(secrets.choice(alphabet) for i in range(5))
         if not Order.objects.filter(reference=code).exists():
+            break
+    return code
+
+
+def generate_ref():
+    alphabet = string.ascii_uppercase + string.ascii_lowercase + string.digits
+    while True:
+        code = ''.join(secrets.choice(alphabet) for i in range(5))
+        if not Payments.objects.filter(ref=code).exists():
             break
     return code
 
