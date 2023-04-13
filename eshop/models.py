@@ -206,6 +206,10 @@ class Order(models.Model):
 
     def __str__(self):
         return f"{self.id}: {self.reference}"
+    
+    @property
+    def products_count(self):
+        return self.products.count()
 
 
 class Order_details(models.Model):
@@ -228,7 +232,7 @@ class Arrival(models.Model):
     products = models.ManyToManyField('Product', through='Arrival_details', related_name='+')
 
     def __str__(self):
-        return f"{self.id} on {self.created_at}"
+        return f"{self.id} on {self.created_at.strftime('%Y-%m-%d at %H:%M:%S')}"
     
     @property
     def products_count(self):

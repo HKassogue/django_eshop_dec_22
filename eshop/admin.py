@@ -1,18 +1,23 @@
 from django.contrib import admin
+from django.contrib.admin.widgets import AdminFileWidget
 from .models import *
 from django.apps import apps
 from django.utils.safestring import mark_safe
 
 # Register your models here.
-admin.site.register(Image)
+# admin.site.register(Image)
 # admin.site.register(Category)
+
 
 @admin.register(Arrival)
 class ArrivalsAdmin(admin.ModelAdmin):
-    list_display = ['id', 'is_closed', 'closed_at', 'products']
-    search_fields = ['id']
-    def products(self, obj):
-        return obj.len()
+    list_display = ['id', 'created_at', 'is_closed', 'closed_at', 'products_count']
+    search_fields = ['id', 'created_at']
+    list_filter = ['is_closed']
+    ordering = ['-created_at', 'is_closed', 'id']
+    fields = ['id', 'created_at', 'is_closed', 'closed_at']
+    readonly_fields = ['id', 'created_at']
+
 
 @admin.register(Arrival_details)
 class ArrivalDetails(admin.ModelAdmin):
@@ -67,22 +72,6 @@ class CategoryAdmin(admin.ModelAdmin):
         return obj.products.count()
 
 
-
-
-class ImageInline(admin.TabularInline):
-    model = Image
-    fields = ['name']
-    extra = 0
-
-    def name_tag(self, obj):
-        return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
-                url = obj.name.url,
-                width=50,
-                height=50,
-            )
-        ) 
- 
-
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ['id', 'user', 'avatar_tag', 'address', 'zipcode', 'city']
@@ -113,17 +102,14 @@ class FaqsAdmin(admin.ModelAdmin):
     list_display = ['id', 'type', 'question', 'answer']
     search_fields = ['id', 'question']
 
-#@admin.register(Image)
+
+@admin.register(Image)
 class ImageAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'product']
-    search_fields = ['id', 'name']
-    def name(self, obj):
-        return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
-                url = obj.name.url,
-                width=50,
-                height=50,
-            )
-        ) 
+    list_display = ['id', 'name_tag', 'name', 'product']
+    search_fields = ['id', 'name', 'product__name']
+    fields = ['name', 'name_tag', 'product']
+    autocomplete_fields = ['product']
+    readonly_fields = ['name_tag']
 
 
 @admin.register(Faqs)
@@ -169,6 +155,26 @@ class PaymentsAdmin(admin.ModelAdmin):
     autocomplete_fields = ['order']
 
 
+class AdminImageWidget(AdminFileWidget):
+    def render(self, name, value, attrs=None, renderer=None):
+        output = []
+        if value and getattr(value, "url", None):
+            image_url = value.url
+            output.append(
+                f'<a href="{image_url}" target="_blank">'
+                f'<img src="{image_url}" width="50" height="50" '
+                f'style="object-fit: cover;"/> </a>')
+        output.append(super(AdminFileWidget, self).render(name, value, attrs, renderer))
+        return mark_safe(u''.join(output))
+
+
+class ImageInline(admin.TabularInline):
+    model = Image
+    # fields = ['name']
+    formfield_overrides = {
+        models.ImageField: {'widget': AdminImageWidget}
+    }
+    extra = 0
 
 
 @admin.register(Product)
