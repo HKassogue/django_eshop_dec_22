@@ -51,9 +51,10 @@ class Image(models.Model):
     name = models.ImageField(null=True, blank=True, upload_to='images/products/')
     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='images')
 
+    @property
     def name_tag(self):
-        return mark_safe('<img src="/media/{url}" width="{width}" height={height} />'.format(
-                url = self.avatar.name,
+        return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
+                url = self.name.url,
                 width=50,
                 height=50,
             )
@@ -69,7 +70,7 @@ class Category(models.Model):
         unique=True)
     active = models.BooleanField(default=True, null=False, blank=False)
     created_at = models.DateTimeField(null=False, blank=False, 
-        auto_now=True)
+        auto_now_add=True)
     image = models.ImageField(null=True, blank=True, upload_to='images/categories/')
     parent = models.ForeignKey('Category', null=True, blank=True, 
         related_name='subcategories', on_delete=models.SET_NULL)
@@ -124,7 +125,7 @@ class Review(models.Model):
     email = models.CharField(max_length=30, null=False, blank=False)
     product = models.ForeignKey('Product', null=False, blank=False, 
         on_delete=models.CASCADE, related_name='reviews')
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
 
     @property
     def user_photo(self):
@@ -139,7 +140,7 @@ class Like(models.Model):
     liked = models.BooleanField(default=True, null=False, blank=False)
     product = models.ForeignKey('Product', null=False, blank=False, 
         on_delete=models.CASCADE, related_name='likes')
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     def __str__(self):
         return f"{self.id}"
 
@@ -158,7 +159,7 @@ class Coupon(models.Model):
     max_usage = models.SmallIntegerField(default=1, null=True, blank=False)
     validity = models.DateTimeField(null=False, blank=False)
     is_valid = models.BooleanField(default=True, null=False, blank=False)
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     def __str__(self):
         return f"{self.code}"
 
@@ -169,7 +170,7 @@ class Order(models.Model):
         related_name='orders')
     customer = models.ForeignKey('Customer', null=True, blank=False, 
         on_delete=models.SET_NULL, related_name='orders')
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     products = models.ManyToManyField('Product', through='Order_details', related_name='orders')
     completed = models.BooleanField(default=False, null=True, blank=False)
     
@@ -221,12 +222,17 @@ class Order_details(models.Model):
 
 
 class Arrival(models.Model):
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     closed_at = models.DateTimeField(null=True, blank=True)
     is_closed = models.BooleanField(default=False, null=False, blank=False)
     products = models.ManyToManyField('Product', through='Arrival_details', related_name='+')
+
     def __str__(self):
         return f"{self.id} on {self.created_at}"
+    
+    @property
+    def products_count(self):
+        return self.products.count()
     
 
 class Arrival_details(models.Model):
@@ -255,7 +261,7 @@ class Delivery(models.Model):
 
 class Payments(models.Model):
     ref = models.CharField(max_length=30, null=False, blank=False, unique=True)
-    payed_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    payed_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     mode = models.CharField(max_length=30, default='Liquidity', null=False, blank=False)
     details = models.TextField(null=True, blank=True)
     order = models.OneToOneField('Order', on_delete=models.PROTECT, related_name='payment')
@@ -268,7 +274,7 @@ class Alerts(models.Model):
     status = models.CharField(max_length=30, null=False, blank=False)
     type = models.CharField(max_length=30, null=False, blank=False)
     details = models.TextField(null=True, blank=True)
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     traited_at = models.DateTimeField(null=False, blank=False)
     user = models.ForeignKey(User, null=False, blank=False, on_delete=models.PROTECT, 
         related_name='+')
@@ -281,7 +287,7 @@ class Faqs(models.Model):
     type = models.CharField(max_length=30, null=False, blank=False)
     question = models.TextField(null=True, blank=True)
     answer = models.TextField(null=True, blank=True)
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
 
     def __str__(self):
         return f"{self.question}"
