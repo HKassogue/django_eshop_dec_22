@@ -49,6 +49,13 @@ class Coupon(admin.ModelAdmin):
         return obj.code
 
 
+class ProductInline(admin.TabularInline):
+    model = Product
+    fields = ['name', 'price', 'stock', 'active']
+    extra = 0
+    sortable_by = ['name', 'price']
+
+
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'slug', 'active', 'image_gen', 'products_number']
@@ -59,6 +66,7 @@ class CategoryAdmin(admin.ModelAdmin):
     ordering = ['id', 'name', 'created_at']
     fields = ['name', 'slug', 'active', 'image_gen', 'image', 'products_number']
     readonly_fields = ['image_gen', 'products_number']
+    inlines = [ProductInline]
 
     def image_gen(self, obj):
         return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
