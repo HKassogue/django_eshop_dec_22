@@ -41,10 +41,25 @@ class Product(models.Model):
             return 0
         from django.db.models import Avg
         return self.reviews.all().aggregate(mean=Avg('rate'))['mean']
+    
+    @property
+    def reviews_count(self):
+        return self.reviews.count()
 
     @property
     def likes_total(self):
         return self.likes.filter(liked=True).count()
+    
+    @property
+    def orders_count(self):
+        return f"{self.orders.filter(completed=True).count()} / {self.orders.count()}"
+    
+    @property
+    def solde_amount(self):
+        solde = 0
+        for order in self.orders.filter(completed=True):
+            solde += sum([item.quantity * item.price for item in Order_details.objects.filter(order=order)])
+        return solde
 
 
 class Image(models.Model):

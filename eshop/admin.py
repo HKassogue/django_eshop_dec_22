@@ -194,11 +194,17 @@ class ProductAdmin(admin.ModelAdmin):
             "fields": ("name", "slug", "category", "description")}
         ),
         ("Prix et stock", {
-            "description": "msg particulier",
             "fields": ("price", "stock")}
+        ),
+        ("Likes and reviews", {
+            "fields": ("likes_total", "reviews_count", "reviews_rate")}
+        ),
+        ("Solde", {
+            "fields": ("orders_count", "solde_amount")}
         ),
     )
     inlines = [ImageInline]
+    readonly_fields = ['likes_total', "reviews_count", "reviews_rate", "orders_count", "solde_amount"]
 
 
 
