@@ -184,20 +184,43 @@ class MyUserAdmin(admin.ModelAdmin):
     list_display_links = ['id', 'user']
     autocomplete_fields = ['user']
 
+
+class OrderProductsInline(admin.TabularInline):
+    model = Order.products.through
+    fields = ['product', 'price', 'quantity']
+    autocomplete_fields = ['product']
+    extra = 0
+    #readonly_fields = ['product']
+    verbose_name = 'Order products details'
+    verbose_name_plural = 'Order products details'
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'reference', 'coupon', 'customer', 'created_at', 'completed']
-    search_fields = ['id', 'reference']
+    list_display = ['id', 'reference', 'completed', 'coupon', 'customer', 'subtotal', 'created_at']
+    list_display_links = ['id', 'reference']
+    list_filter = ['completed']
+    search_fields = ['id', 'reference', 'customer', 'coupon']
     autocomplete_fields = ['customer', 'coupon']
-    #fields = ['reference', 'completed', 'coupon', 'customer']
-
+    readonly_fields = ['id', 'created_at', 'shipping', 'reduction', 'subtotal', 'total', 'products_count']
+    fieldsets = (
+        ("Order information", {
+            # "classes": ["collapse", "start-open"],
+            "fields": ('id', 'reference', 'completed', 'coupon', 'customer', 'created_at')}
+        ),
+        ("Order amount", {
+            "fields": ('shipping', 'reduction', 'subtotal', 'total', 'products_count')}
+        ),
+    )
+    inlines = [OrderProductsInline]
 
 
 @admin.register(Order_details)
 class OrderDetailsAdmin(admin.ModelAdmin):
     list_display = ['id', 'order', 'product', 'quantity', 'price']
-    search_fields = ['id', 'order']
-    autocomplete_fields = ['product']
+    list_display_links = ['id', 'order']
+    search_fields = ['id', 'order', 'product']
+    autocomplete_fields = ['order', 'product']
 
 
 @admin.register(Review)

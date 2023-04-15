@@ -252,7 +252,7 @@ def add_delivery(request, order_id):
             )
             # proceeding to payment by Stripe API
             token = request.POST.get('stripeToken')
-            chargeID = stripe_payment(settings.STRIPE_SECRET_KEY, token, order.get_total, str(order.id))
+            chargeID = stripe_payment(settings.STRIPE_SECRET_KEY, token, order.total, str(order.id))
             # if payment success
             if chargeID:
                 # adding payment info

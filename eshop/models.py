@@ -225,9 +225,12 @@ class Order(models.Model):
     created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     products = models.ManyToManyField('Product', through='Order_details', related_name='orders')
     completed = models.BooleanField(default=False, null=True, blank=False)
+
+    class Meta:
+        ordering = ["-created_at", "reference"]
     
     @property
-    def get_total(self):
+    def total(self):
         return self.subtotal + self.shipping - self.reduction
     
     @property
@@ -257,7 +260,7 @@ class Order(models.Model):
            return self.Order_details.all()
 
     def __str__(self):
-        return f"{self.id}: {self.reference}"
+        return f"{self.reference}"
     
     @property
     def products_count(self):
@@ -270,10 +273,15 @@ class Order_details(models.Model):
     quantity = models.SmallIntegerField(default=1, null=True, blank=False)
     price = models.SmallIntegerField(default=1, null=True, blank=False)
     
+    class Meta:
+        verbose_name = "Order details"
+        verbose_name_plural = "Orders details"
+
     def __str__(self):
-        return f"{self.id}"
+        return f"{self.order.reference} : {self.product.name} x {self.quantity}"
     
-    def get_total_price (self):
+    @property
+    def total(self):
         return self.quantity * self.price
 
 
