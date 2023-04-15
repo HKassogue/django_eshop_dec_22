@@ -181,8 +181,12 @@ class Like(models.Model):
     product = models.ForeignKey('Product', null=False, blank=False, 
         on_delete=models.CASCADE, related_name='likes')
     created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-liked"]
+
     def __str__(self):
-        return f"{self.id}"
+        return f"{self.product.name}" + ("liked" if self.liked else "unliked") + f" at {self.created_at}"
 
 
 class Coupon_type(models.Model):

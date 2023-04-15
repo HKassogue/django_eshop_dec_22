@@ -139,9 +139,15 @@ class FaqsAdmin(admin.ModelAdmin):
     list_display = ['id', 'type', 'question', 'answer']
     search_fields = ['id', 'question']
 
+
 @admin.register(Like)
 class LikeAdmin(admin.ModelAdmin):
-    list_display = ['id', 'email', 'product']
+    list_display = ['id', 'product', 'liked', 'email', 'created_at']
+    search_fields = ['product', 'email']
+    list_filter = ['liked']
+    ordering = ['-created_at', '-liked']
+    autocomplete_fields = ['product']
+    list_per_page = 20
 
 
 @admin.register(MyUser)
