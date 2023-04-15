@@ -38,14 +38,38 @@ class Alerts(admin.ModelAdmin):
 @admin.register(Coupon_type)
 class CouponType(admin.ModelAdmin):
     list_display = ['id', 'name']
-    def coupon_type(self, obj):
-        return obj.name
+    list_display_links = ['id', 'name']
+    search_fields = ['name', 'id']
+    
 
 @admin.register(Coupon)
-class Coupon(admin.ModelAdmin):
-    list_display = ['id', 'code','coupon_type', 'description', 'discount', 'max_usage', 'validity', 'is_valid', 'created_at']
+class CouponAdmin(admin.ModelAdmin):
+    list_display = ['code', 'coupon_type', 'description_trunc', 'discount', 'max_usage', 'is_valid', 'created_at']
     search_fields = ['code', 'id']
     list_filter = [ 'coupon_type', 'is_valid']
+    list_display_links = ['code']
+    ordering = ['-created_at', 'id']
+    autocomplete_fields = ['coupon_type']
+    readonly_fields = ['id', 'created_at']
+    fieldsets = (
+        ("References", {
+            # "classes": ["collapse", "start-open"],
+            "fields": ('id', 'code', )}
+        ),
+        ("Discount information", {
+            # "classes": ["collapse", "start-open"],
+            "fields": ('discount', 'coupon_type', 'description')}
+        ),
+        ("Validity information", {
+            "fields": ('max_usage', 'is_valid', 'created_at', 'validity')}
+        ),
+    )
+
+    def description_trunc(self, obj):
+        if len(obj.description) <= 15:
+            return obj.description
+        return truncatewords(obj.description, 15) + '...'
+    description_trunc.short_description = "description"
 
     def arrival(self, obj): 
         return obj.code
@@ -69,6 +93,7 @@ class CategoryAdmin(admin.ModelAdmin):
     fields = ['name', 'slug', 'active', 'image_gen', 'image', 'products_number']
     readonly_fields = ['image_gen', 'products_number']
     inlines = [ProductInline]
+    list_display_links = ['id', 'name', 'slug']
 
     def image_gen(self, obj):
         return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
@@ -182,6 +207,7 @@ class ReviewAdmin(admin.ModelAdmin):
     ordering = ['-created_at', '-rate']
     autocomplete_fields = ['product']
     list_per_page = 20
+    list_display_links = ['id', 'rate']
 
     def comment_trunc(self, obj):
         if len(obj.comment) <= 15:

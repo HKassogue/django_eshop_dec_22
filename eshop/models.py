@@ -191,6 +191,10 @@ class Like(models.Model):
 
 class Coupon_type(models.Model):
     name = models.CharField(max_length=30, null=False, blank=False, unique=True)
+
+    class Meta:
+        verbose_name_plural = "coupons types"
+
     def __str__(self):
         return f"{self.name}"
 
@@ -204,6 +208,10 @@ class Coupon(models.Model):
     validity = models.DateTimeField(null=False, blank=False)
     is_valid = models.BooleanField(default=True, null=False, blank=False)
     created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
     def __str__(self):
         return f"{self.code}"
 
