@@ -129,9 +129,15 @@ class FaqsAdmin(admin.ModelAdmin):
 class LikeAdmin(admin.ModelAdmin):
     list_display = ['id', 'email', 'product']
 
+
 @admin.register(MyUser)
 class MyUserAdmin(admin.ModelAdmin):
     list_display = ['id', 'user', 'avatar_tag']
+    search_fields = ['user__first_name', 'user__first_name', 'user__last_name', 'user__username']
+    fields = ['user', 'avatar', 'avatar_tag']
+    readonly_fields = ['avatar_tag']
+    list_display_links = ['id', 'user']
+    autocomplete_fields = ['user']
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):

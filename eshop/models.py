@@ -103,12 +103,15 @@ class MyUser(models.Model):
     avatar = models.ImageField(upload_to='images/users/', null=True, blank=True)
     
     def avatar_tag(self):
-        return mark_safe('<img src="/media/{url}" width="{width}" height={height} />'.format(
-                url = self.avatar.name,
+        if not self.avatar:
+            return ''
+        return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
+                url = self.avatar.name.url,
                 width=50,
                 height=50,
             )
         ) 
+    
     def __str__(self):
         return f"{self.user.username}"
 
