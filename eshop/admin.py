@@ -11,23 +11,35 @@ from django.template.defaultfilters import truncatewords
 # admin.site.register(Category)
 
 
+class ArrivalProductsInline(admin.TabularInline):
+    model = Arrival.products.through
+    fields = ['product', 'quantity']
+    autocomplete_fields = ['product']
+    extra = 0
+    #readonly_fields = ['product']
+    verbose_name = 'Arrival products details'
+    verbose_name_plural = 'Arrivals products details'
+
+
 @admin.register(Arrival)
 class ArrivalsAdmin(admin.ModelAdmin):
     list_display = ['id', 'created_at', 'is_closed', 'closed_at', 'products_count']
     search_fields = ['id', 'created_at']
+    list_display_links = ['id', 'created_at']
     list_filter = ['is_closed']
     ordering = ['-created_at', 'is_closed', 'id']
     fields = ['id', 'created_at', 'is_closed', 'closed_at']
     readonly_fields = ['id', 'created_at']
+    inlines = [ArrivalProductsInline]
 
 
 @admin.register(Arrival_details)
 class ArrivalDetails(admin.ModelAdmin):
     list_display = ['id', 'arrival', 'product', 'quantity']
+    search_fields = ['id', 'arrival', 'product']
     autocomplete_fields = ['arrival', 'product']
+    list_display_links = ['id', 'arrival']
 
-    def products(self, obj):
-        return obj.len()
 
 @admin.register(Alerts)
 class Alerts(admin.ModelAdmin):

@@ -303,6 +303,11 @@ class Arrival_details(models.Model):
     arrival = models.ForeignKey('Arrival', null=True, blank=False, on_delete=models.SET_NULL)
     product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
     quantity = models.SmallIntegerField(default=1, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Arrival details"
+        verbose_name_plural = "Arrivals details"
+        
     def __str__(self):
         return f"{self.arrival.id} : {self.product.name} x {self.quantity}"
 
