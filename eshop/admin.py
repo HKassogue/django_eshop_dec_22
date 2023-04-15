@@ -3,6 +3,8 @@ from django.contrib.admin.widgets import AdminFileWidget
 from .models import *
 from django.apps import apps
 from django.utils.safestring import mark_safe
+from django.template.defaultfilters import truncatewords
+
 
 # Register your models here.
 # admin.site.register(Image)
@@ -169,9 +171,17 @@ class OrderDetailsAdmin(admin.ModelAdmin):
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ['id', 'rate', 'comment', 'name', 'email', 'product', 'created_at']
-    list_filter = ['product']
+    list_display = ['id', 'rate', 'comment_trunc', 'product', 'name', 'email', 'created_at']
+    search_fields = ['product', 'comment', 'name', 'email']
+    ordering = ['-created_at', '-rate']
     autocomplete_fields = ['product']
+    list_per_page = 20
+
+    def comment_trunc(self, obj):
+        if len(obj.comment) <= 15:
+            return obj.comment
+        return truncatewords(obj.comment, 15) + '...'
+    comment_trunc.short_description = "comment"
 
 
 @admin.register(Payments)

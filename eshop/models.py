@@ -160,6 +160,13 @@ class Review(models.Model):
         on_delete=models.CASCADE, related_name='reviews')
     created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
 
+    class Meta:
+        ordering = ["-created_at", "-rate"]
+
+    def __str__(self):
+        return f"{self.product.name} rated {self.rate} at {self.created_at}"
+
+
     @property
     def user_photo(self):
         customer = Customer.objects.get(user__email=self.email)
