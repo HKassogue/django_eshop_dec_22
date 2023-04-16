@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.safestring import mark_safe
 from django_countries.fields import CountryField
+from django.utils.timezone import now
+
 
 # Create your models here.
 class Product(models.Model):
@@ -40,18 +42,35 @@ class Product(models.Model):
             return 0
         from django.db.models import Avg
         return self.reviews.all().aggregate(mean=Avg('rate'))['mean']
+    
+    @property
+    def reviews_count(self):
+        return self.reviews.count()
 
     @property
     def likes_total(self):
         return self.likes.filter(liked=True).count()
+    
+    @property
+    def orders_count(self):
+        return f"{self.orders.filter(completed=True).count()} / {self.orders.count()}"
+    
+    @property
+    def solde_amount(self):
+        solde = 0
+        for order in self.orders.filter(completed=True):
+            solde += sum([item.quantity * item.price for item in Order_details.objects.filter(order=order)])
+        return solde
+
 
 class Image(models.Model):
     name = models.ImageField(null=True, blank=True, upload_to='images/products/')
     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='images')
 
+    @property
     def name_tag(self):
-        return mark_safe('<img src="/media/{url}" width="{width}" height={height} />'.format(
-                url = self.avatar.name,
+        return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
+                url = self.name.url,
                 width=50,
                 height=50,
             )
@@ -67,7 +86,7 @@ class Category(models.Model):
         unique=True)
     active = models.BooleanField(default=True, null=False, blank=False)
     created_at = models.DateTimeField(null=False, blank=False, 
-        auto_now=True)
+        auto_now_add=True)
     image = models.ImageField(null=True, blank=True, upload_to='images/categories/')
     parent = models.ForeignKey('Category', null=True, blank=True, 
         related_name='subcategories', on_delete=models.SET_NULL)
@@ -85,12 +104,15 @@ class MyUser(models.Model):
     avatar = models.ImageField(upload_to='images/users/', null=True, blank=True)
     
     def avatar_tag(self):
-        return mark_safe('<img src="/media/{url}" width="{width}" height={height} />'.format(
-                url = self.avatar.name,
+        if not self.avatar:
+            return ''
+        return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
+                url = self.avatar.name.url,
                 width=50,
                 height=50,
             )
         ) 
+    
     def __str__(self):
         return f"{self.user.username}"
 
@@ -101,14 +123,31 @@ class Customer(models.Model):
     address = models.CharField(max_length=30, null=True, blank=True)
     zipcode = models.CharField(max_length=6, null=True, blank=True)
     city = models.CharField(max_length=30, null=True, blank=True)
+    country = models.CharField(max_length=20, null=True, blank=True)
+    tel = models.CharField(max_length=20, null=True, blank=True)
 
     def avatar_tag(self):
-        return mark_safe('<img src="/media/{url}" width="{width}" height={height} />'.format(
-                url = self.avatar.name,
+        if not self.avatar:
+            return '-'
+        return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
+                url = self.avatar.name.url,
                 width=50,
                 height=50,
             )
-        ) 
+        )
+    
+    @property
+    def reviews_count(self):
+        return Review.objects.filter(email=self.user.email).count()
+
+    @property
+    def likes_count(self):
+        return Like.objects.filter(liked=True, email=self.user.email).count()
+    
+    @property
+    def orders_count(self):
+        return f"{Order.objects.filter(customer=self, completed=True).count()} / {Order.objects.filter(customer=self).count()}"
+    
     def __str__(self):
         return f"{self.user.username}"
 
@@ -120,7 +159,14 @@ class Review(models.Model):
     email = models.CharField(max_length=30, null=False, blank=False)
     product = models.ForeignKey('Product', null=False, blank=False, 
         on_delete=models.CASCADE, related_name='reviews')
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-rate"]
+
+    def __str__(self):
+        return f"{self.product.name} rated {self.rate} at {self.created_at.strftime('%Y-%m-%d, %H:%M:%S')}"
+
 
     @property
     def user_photo(self):
@@ -129,19 +175,27 @@ class Review(models.Model):
             return customer.avatar.url
         return ''
 
+
 class Like(models.Model):
     email = models.CharField(max_length=30, null=False, blank=False)
     liked = models.BooleanField(default=True, null=False, blank=False)
     product = models.ForeignKey('Product', null=False, blank=False, 
         on_delete=models.CASCADE, related_name='likes')
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
-    def __str__(self):
-        return f"{self.id}"
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
 
+    class Meta:
+        ordering = ["-created_at", "-liked"]
+
+    def __str__(self):
+        return f"{self.product.name}" + ("liked" if self.liked else "unliked") + f" at {self.created_at.strftime('%Y-%m-%d, %H:%M:%S')}"
 
 
 class Coupon_type(models.Model):
     name = models.CharField(max_length=30, null=False, blank=False, unique=True)
+
+    class Meta:
+        verbose_name_plural = "coupons types"
+
     def __str__(self):
         return f"{self.name}"
 
@@ -154,10 +208,13 @@ class Coupon(models.Model):
     max_usage = models.SmallIntegerField(default=1, null=True, blank=False)
     validity = models.DateTimeField(null=False, blank=False)
     is_valid = models.BooleanField(default=True, null=False, blank=False)
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
     def __str__(self):
         return f"{self.code}"
-
 
 
 class Order(models.Model):
@@ -166,22 +223,49 @@ class Order(models.Model):
         related_name='orders')
     customer = models.ForeignKey('Customer', null=True, blank=False, 
         on_delete=models.SET_NULL, related_name='orders')
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     products = models.ManyToManyField('Product', through='Order_details', related_name='orders')
     completed = models.BooleanField(default=False, null=True, blank=False)
+
+    class Meta:
+        ordering = ["-created_at", "reference"]
     
-    def get_total (self):
-        total = 0
-        for order_item in self.products.all():
-            total += order_item.get_total_price()
-        return total
+    @property
+    def total(self):
+        return self.subtotal + self.shipping - self.reduction
+    
+    @property
+    def shipping(self):
+        # from django.db.models import Sum
+        # if self.deliveries.all():
+        #     return self.deliveries.all().aggregate(sum=Sum('price'))['sum']
+        return 10
+    
+    @property
+    def subtotal(self):
+        items = Order_details.objects.filter(order=self)
+        return sum([item.price * item.quantity for item in items])
+    
+    @property
+    def reduction(self):
+        if self.coupon:
+            if self.coupon.coupon_type.id == 1:
+                return self.subtotal * self.coupon.discount / 100
+            else:
+                return self.coupon.discount
+        return 0
+        
     @property
     def order_details(self):
        if self.Order_details.all():
            return self.Order_details.all()
 
     def __str__(self):
-        return f"{self.id}: {self.reference}"
+        return f"{self.reference}"
+    
+    @property
+    def products_count(self):
+        return self.products.count()
 
 
 class Order_details(models.Model):
@@ -190,28 +274,44 @@ class Order_details(models.Model):
     quantity = models.SmallIntegerField(default=1, null=True, blank=False)
     price = models.SmallIntegerField(default=1, null=True, blank=False)
     
+    class Meta:
+        verbose_name = "Order details"
+        verbose_name_plural = "Orders details"
+
     def __str__(self):
-        return f"{self.id}"
+        return f"{self.order.reference} : {self.product.name} x {self.quantity}"
     
-    def get_total_price (self):
+    @property
+    def total(self):
         return self.quantity * self.price
 
 
-
 class Arrival(models.Model):
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     closed_at = models.DateTimeField(null=True, blank=True)
     is_closed = models.BooleanField(default=False, null=False, blank=False)
     products = models.ManyToManyField('Product', through='Arrival_details', related_name='+')
+
     def __str__(self):
-        return f"{self.id} on {self.created_at}"
+        return f"{self.id} on {self.created_at.strftime('%Y-%m-%d, %H:%M:%S')}"
     
+    @property
+    def products_count(self):
+        return self.products.count()
+    
+
 class Arrival_details(models.Model):
     arrival = models.ForeignKey('Arrival', null=True, blank=False, on_delete=models.SET_NULL)
     product = models.ForeignKey('Product', null=True, blank=False, on_delete=models.SET_NULL)
     quantity = models.SmallIntegerField(default=1, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Arrival details"
+        verbose_name_plural = "Arrivals details"
+
     def __str__(self):
         return f"{self.arrival.id} : {self.product.name} x {self.quantity}"
+
 
 class Delivery(models.Model):
     address = models.CharField(max_length=30, null=False, blank=False)
@@ -225,42 +325,73 @@ class Delivery(models.Model):
         related_name='deliveries')
     delivered_by = models.ForeignKey('MyUser', null=True, blank=True, on_delete=models.SET_NULL, 
         related_name='+')
+    delivered_at = models.DateTimeField(null=True, blank=True, default=now)
+    
+    class Meta:
+        ordering = ["-delivered_at", "-state"]
+        verbose_name_plural = "deliveries"
+    
     def __str__(self):
-        return f"{self.id}"
+        return f"Delivery of {self.order.reference} : {self.state}"
+
 
 class Payments(models.Model):
     ref = models.CharField(max_length=30, null=False, blank=False, unique=True)
-    payed_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    payed_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     mode = models.CharField(max_length=30, default='Liquidity', null=False, blank=False)
     details = models.TextField(null=True, blank=True)
     order = models.OneToOneField('Order', on_delete=models.PROTECT, related_name='payment')
 
-    def __str__(self):
-        return f"{self.ref}"
+    class Meta:
+        ordering = ["-payed_at", "ref"]
+        verbose_name_plural = 'payments'
 
+    def __str__(self):
+        return f"Payment of {self.order} at {self.payed_at.strftime('%Y-%m-%d, %H:%M:%S')}"
 
 
 class Alerts(models.Model):
     status = models.CharField(max_length=30, null=False, blank=False)
     type = models.CharField(max_length=30, null=False, blank=False)
     details = models.TextField(null=True, blank=True)
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
-    traited_at = models.DateTimeField(null=False, blank=False)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
+    traited_at = models.DateTimeField(null=True, blank=True)
     user = models.ForeignKey(User, null=False, blank=False, on_delete=models.PROTECT, 
         related_name='+')
     
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name_plural = 'alerts'
+
     def __str__(self):
-        return f"{self.id}"
+        return f"{self.id} at {self.created_at.strftime('%Y-%m-%d, %H:%M:%S')} : {self.status}"
 
 
 class Faqs(models.Model):
     type = models.CharField(max_length=30, null=False, blank=False)
     question = models.TextField(null=True, blank=True)
     answer = models.TextField(null=True, blank=True)
-    created_at = models.DateTimeField(null=False, blank=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = 'Faqs'
 
     def __str__(self):
         return f"{self.question}"
 
+
 class Filter_Price(models.Model):
-    price = models.CharField(max_length=50, choices=[('0 - 1000', '0 - 1000'), ('1000 - 2000', '1000 - 2000'), ('2000 - 3000', '2000 - 3000'), ('3000 - 4000', '3000 - 4000'), ('4000 - 5000', '4000 - 5000'), ('5000 - 10000', '5000 - 10000')])
+    min = models.FloatField(null=True, blank=False)
+    max = models.FloatField(null=True, blank=False)
+
+    class Meta:
+        verbose_name = 'Price bracket'
+        verbose_name_plural = 'Prices brackets'
+        ordering = ['min', 'max']
+
+    def __str__(self):
+        return f"{self.min} - {self.max}"
+    
+    @property
+    def products_count(self):
+        return Product.objects.filter(active=True, price__gte=self.min, price__lte=self.max).count()

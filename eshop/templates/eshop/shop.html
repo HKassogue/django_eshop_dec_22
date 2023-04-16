@@ -40,68 +40,31 @@
             <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Filter by
                     price</span></h5>
             <div class="bg-light p-4 mb-30">
-                <form>
-                    <h4 class="price-title"> Price filter</h4>
-                    <div class="price-sliider-amont">
-                        {% for f_price in filter_Price %}
-                        <li> <span onclick="proceedCheckout({{f_price.price}})" class="selected m-8">
-                                {{f_price.price}}</span>
-                        </li>
-                        {% endfor %}
-                    </div>
-                    <!-- <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
-                        <input type="checkbox" class="custom-control-input" id="price-1">
-                        <label class="custom-control-label" for="price-1">$0 - $100</label>
-                        <span class="badge border font-weight-normal">150</span>
-                    </div>
+                <form method='post'>
+                    {% csrf_token %}
                     <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
-                        <input type="checkbox" class="custom-control-input" id="price-2">
-                        <label class="custom-control-label" for="price-2">$100 - $200</label>
-                        <span class="badge border font-weight-normal">295</span>
+                        <input type="radio" class="custom-control-input" id="price-all" value="all" name="price" checked>
+                        <label class="custom-control-label" for="price-all">All prices</label>
+                        <span class="badge border font-weight-normal">{{total}}</span>
                     </div>
+                    {% for price_bracket in price_brackets %}
                     <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
-                        <input type="checkbox" class="custom-control-input" id="price-3">
-                        <label class="custom-control-label" for="price-3">$200 - $300</label>
-                        <span class="badge border font-weight-normal">246</span>
+                        <input type="radio" class="custom-control-input" id="price-{{price_bracket.id}}" value="{{price_bracket.id}}" name="price">
+                        <label class="custom-control-label" for="price-{{price_bracket.id}}">${{price_bracket.min|floatformat}}  --  ${{price_bracket.max|floatformat}}</label>
+                        <span class="badge border font-weight-normal">{{price_bracket.products_count}}</span>
                     </div>
-                    <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
-                        <input type="checkbox" class="custom-control-input" id="price-4">
-                        <label class="custom-control-label" for="price-4">$300 - $400</label>
-                        <span class="badge border font-weight-normal">145</span>
+                    {% endfor %}
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                        <input type="input" name="price_min" style="width: 100px" placeholder="Min price">
+                        --
+                        <input type="input" name="price_max" style="width: 100px" placeholder="Max price">
                     </div>
-                    <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between">
-                        <input type="checkbox" class="custom-control-input" id="price-5">
-                        <label class="custom-control-label" for="price-5">$400 - $500</label>
-                        <span class="badge border font-weight-normal">168</span>
-                    </div> -->
+                    <div class="custom-control badge border col mt-2">
+                        <button class="btn btn-primary w-100">Filter</button>
+                    </div>
                 </form>
             </div>
             <!-- Price Filter End -->
-
-            <!-- Category Filter Start -->
-            <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Filter by
-                    category</span></h5>
-            <div class="bg-light p-4 mb-30">
-                <form>
-                    <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
-                        <input type="checkbox" class="custom-control-input" checked id="color-all">
-                        <label class="custom-control-label" for="price-all">All categories</label>
-                        <span class="badge border font-weight-normal">{{total}}</span>
-                    </div>
-                    {% for category in categories %}
-                    {% if category.products.count > 0 %}
-                    <div>
-                        <ul>
-                            <li>
-                                <a href="{% url 'shop' cat=category.slug %}"> {{category.name}}</a>
-                            </li>
-                        </ul>
-                    </div>
-                    {% endif %}
-                    {% endfor %}
-                </form>
-            </div>
-            <!-- Category Filter End -->
         </div>
         <!-- Shop Sidebar End -->
 
@@ -160,8 +123,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="prd" class="row">
-                    {% for product in products %}
+                {% for product in products %}
                     <div class="col-lg-4 col-md-6 col-sm-6 pb-1">
                         <div class="product-item bg-light mb-4">
                             <div class="product-img position-relative overflow-hidden">
@@ -186,8 +148,11 @@
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
-                </div>
+                {% empty %}
+                    <div class="col-12 mt-5 pagination justify-content-center">
+                        No products found for your search!
+                    </div>
+                {% endfor %}
                 <div class="col-12">
                     <nav>
                         {% if products.has_other_pages %}
@@ -224,54 +189,34 @@
     </div>
 </div>
 <!-- Shop End -->
+{% endblock %}
 
-
-<script>
-    function proceedCheckout(filter) {
-        $.ajax({
-            url: "{% url 'filters'  %}",
-            data: { price: filter },
-            dataType: 'json',
-            success: function (data) {
-                console.log(data)
-                console.log(data.status)
-                let html = '';
-                data.forEach(product => {
-                    html += `
-                    <div class="col-lg-4 col-md-6 col-sm-6 pb-1">
-                    <div class="product-item bg-light mb-4">
-                        <div class="product-img position-relative overflow-hidden">
-                            <img class="img-fluid w-100" src="${product.first_image}" alt="${product.name}">
-                            <div class="product-action">
-                                <a class="btn btn-outline-dark btn-square add-to-cart" data-product="${product.id}"><i class="fa fa-shopping-cart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="far fa-heart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-sync-alt"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-search"></i></a>
-                            </div>
-                        </div>
-                        <div class="text-center py-4">
-                            <a class="h6 text-decoration-none text-truncate"
-                                href="{% url 'detail' id=${product.id}">${product.name}</a>
-                            <div class="d-flex align-items-center justify-content-center mt-2">
-                                <h5>${product.price|floatformat}</h5><del><h6 class="text-muted ml-2"><del>${product.fake_promo|floatformat}</del></h6>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-center mb-1">
-                                ${product.reviews_rate|format_rate}
-                                <small>(${product.stock})</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                `
-                });
-                $('#prd').html(html)
+{% comment %} {% block script %}
+<script type="text/javascript">
+    function filter(cat='all') {
+        var url = '/shop/' + cat
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
             },
-            error: function (error) {
-                console.log(error)
-            }
+            body: JSON.stringify({
+                'price': document.getElementByName('price').value,
+                'price_min': $('#price_min').val(),
+                'price_max': $('#price_max').val(),
+            })
+        })
+        .then((response) => {
+            return response.json()
+        })
+        .then((data) => {
+            location.reload()
+            //location.reload('#tab-pane-3')
+            //$('#tab-pane-3').load('#tab-pane-3')
+            //$("#tab-pane-3").load(location.href + " #tab-pane-3");
+            //$("#tab-pane-3").load(window.location + "#tab-pane-3");
         });
     }
-
-</script>
-
-{% endblock %}
+    </script>
+{% endblock %} {% endcomment %}
