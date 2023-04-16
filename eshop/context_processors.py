@@ -1,5 +1,6 @@
 from .models import Category, Order_details, Order, Like, Review 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from django.utils import timezone
 import stripe
 
 
@@ -7,6 +8,7 @@ def getCategories(request):
     categories = Category.objects.filter(active=True).order_by('name')
     total = sum([category.products.count() for category in categories])
     return {'categories': categories, 'total': total}
+
 
 def stripe_payment (secret_key, token, amount, description ):
     try:
@@ -55,10 +57,27 @@ def stripe_payment (secret_key, token, amount, description ):
 
     return None
 
+
 def getDashboardData(request):
-    total_ventes = 100000
-    total_ventes_week = [1000, 2500, 1800, 4000, 5000, 2000, 1000]
-    return {'total_ventes': total_ventes, 'total_ventes_week': total_ventes_week}
+    today = date.today()
+
+    orders = Order.objects.filter(created_at__date=today, completed=True)
+    day_sells_count = orders.count()
+    day_sells_amount = sum([order.total for order in orders])
+
+    week_sells_amount = sum([order.total for order in Order.objects.filter(created_at__date__gte=today-timedelta(days=6), completed=True)])
+    week_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    week_sells = [sum([order.total for order in Order.objects.filter(created_at__date=d, completed=True)]) for d in week_days]
+    week_days = [f"{d.strftime('%a')} ({d.day})" for d in week_days]
+
+    return {
+        'day_sells_count': day_sells_count, 
+        'day_sells_amount': day_sells_amount, 
+        'week_sells_amount': week_sells_amount,
+        'week_sells': week_sells,
+        'week_days': week_days,
+    }
+
 
 def getCountOrderByDay(request):
    current_date=datetime.now()
@@ -70,19 +89,23 @@ def getCountOrderByDay(request):
 #        somme += order.quantity * order.product.price
    return  {"nombre":nombre}
 
+
 def getCountOrderByMonth(request):
    current_date=datetime.now()
    order=Order.objects.filter(created_at__month = date.today().month)
    month = order.count()
    return  {"month":month}
 
+
 def getCountLike(request):
    like = Like.objects.count()
    return  {"like":like}
 
+
 def getCountReview(request):
    review = Review.objects.count()
    return  {"review":review}
+
 
 def getSessionInfo(request):
     cart = request.session.get('cart', {})
