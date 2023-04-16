@@ -344,6 +344,7 @@ class Payments(models.Model):
 
     class Meta:
         ordering = ["-payed_at", "ref"]
+        verbose_name_plural = 'payments'
 
     def __str__(self):
         return f"Payment of {self.order} at {self.payed_at.strftime('%Y-%m-%d, %H:%M:%S')}"
@@ -372,6 +373,9 @@ class Faqs(models.Model):
     answer = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
 
+    class Meta:
+        verbose_name_plural = 'Faqs'
+
     def __str__(self):
         return f"{self.question}"
 
@@ -382,6 +386,7 @@ class Filter_Price(models.Model):
 
     class Meta:
         verbose_name = 'Price bracket'
+        verbose_name_plural = 'Prices brackets'
         ordering = ['min', 'max']
 
     def __str__(self):

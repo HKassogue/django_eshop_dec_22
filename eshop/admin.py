@@ -170,12 +170,6 @@ class DeliveryAdmin(admin.ModelAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
-#@admin.register(Faqs)
-class FaqsAdmin(admin.ModelAdmin):
-    list_display = ['id', 'type', 'question', 'answer']
-    search_fields = ['id', 'question']
-
-
 @admin.register(Image)
 class ImageAdmin(admin.ModelAdmin):
     list_display = ['id', 'name_tag', 'name', 'product']
@@ -187,8 +181,23 @@ class ImageAdmin(admin.ModelAdmin):
 
 @admin.register(Faqs)
 class FaqsAdmin(admin.ModelAdmin):
-    list_display = ['id', 'type', 'question', 'answer']
+    list_display = ['id', 'type', 'question_trunc', 'answer_trunc', 'created_at']
     search_fields = ['id', 'question']
+    list_filter = ['type']
+    fields = ['id', 'type', 'question', 'answer', 'created_at']
+    readonly_fields = ['id', 'created_at']
+
+    def question_trunc(self, obj):
+        if len(obj.question) <= 15:
+            return obj.question
+        return truncatewords(obj.question, 15) + '...'
+    question_trunc.short_description = "question"
+
+    def answer_trunc(self, obj):
+        if len(obj.answer) <= 15:
+            return obj.answer
+        return truncatewords(obj.answer, 15) + '...'
+    answer_trunc.short_description = "answer"
 
 
 @admin.register(Like)
@@ -326,8 +335,6 @@ class ProductAdmin(admin.ModelAdmin):
     )
     inlines = [ImageInline]
     readonly_fields = ['likes_total', "reviews_count", "reviews_rate", "orders_count", "solde_amount"]
-
-
 
 
 # all other models
