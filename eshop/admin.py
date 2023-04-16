@@ -143,18 +143,27 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(Delivery)
 class DeliveryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'address', 'zipcode', 'city', 'price', 'order', 'delivered_by']
-    search_fields = ['address', 'id', 'order']
-    autocomplete_fields = ['order']
+    list_display = ['id', 'order', 'state', 'address', 'zipcode', 'city', 'country', 'price', 'delivered_at']
+    list_filter = ['state']
+    search_fields = ['address', 'id', 'order', 'city', 'country']
+    autocomplete_fields = ['order', 'delivered_by']
     fieldsets = (
         ("Lieux", {
             # "classes": ["collapse", "start-open"],
-            "fields": ('address', 'zipcode', 'city')}
+            "fields": ('address', 'zipcode', 'city', 'country')}
         ),
         ("Commande et livreur", {
-            "fields": ('order', 'delivered_by', 'price')}
+            "fields": ('order', 'state', 'delivered_at', 'delivered_by', 'price')}
         ),
     )
+    list_display_links = ['id', 'order']
+    
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'delivered_by':
+            kwargs['initial'] = MyUser.objects.get(user=request.user).id
+            kwargs['disabled'] = True
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 #@admin.register(Faqs)
 class FaqsAdmin(admin.ModelAdmin):

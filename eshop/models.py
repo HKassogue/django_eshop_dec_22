@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.safestring import mark_safe
 from django_countries.fields import CountryField
+from django.utils.timezone import now
 
 
 # Create your models here.
@@ -307,7 +308,7 @@ class Arrival_details(models.Model):
     class Meta:
         verbose_name = "Arrival details"
         verbose_name_plural = "Arrivals details"
-        
+
     def __str__(self):
         return f"{self.arrival.id} : {self.product.name} x {self.quantity}"
 
@@ -324,8 +325,14 @@ class Delivery(models.Model):
         related_name='deliveries')
     delivered_by = models.ForeignKey('MyUser', null=True, blank=True, on_delete=models.SET_NULL, 
         related_name='+')
+    delivered_at = models.DateTimeField(null=True, blank=True, default=now)
+    
+    class Meta:
+        ordering = ["-delivered_at", "-state"]
+        verbose_name_plural = "deliveries"
+    
     def __str__(self):
-        return f"{self.id}"
+        return f"Delivery of {self.order.reference} : {self.state}"
 
 
 class Payments(models.Model):
