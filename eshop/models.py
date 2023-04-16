@@ -354,12 +354,16 @@ class Alerts(models.Model):
     type = models.CharField(max_length=30, null=False, blank=False)
     details = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
-    traited_at = models.DateTimeField(null=False, blank=False)
+    traited_at = models.DateTimeField(null=True, blank=True)
     user = models.ForeignKey(User, null=False, blank=False, on_delete=models.PROTECT, 
         related_name='+')
     
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name_plural = 'alerts'
+
     def __str__(self):
-        return f"{self.id}"
+        return f"{self.id} at {self.created_at} : {self.status}"
 
 
 class Faqs(models.Model):

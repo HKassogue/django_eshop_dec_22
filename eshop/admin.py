@@ -44,8 +44,13 @@ class ArrivalDetails(admin.ModelAdmin):
 @admin.register(Alerts)
 class Alerts(admin.ModelAdmin):
     list_display = ['id', 'status', 'type', 'details', 'created_at', 'traited_at', 'user']
-    def arrival(self, obj):
-        return obj.len()
+    list_filter = ['status', 'type']
+    search_fields = ['details', 'user', 'id']
+    list_display_links = ['id', 'status']
+    fields = ['id', 'status', 'type', 'details', 'created_at', 'traited_at', 'user']
+    autocomplete_fields = ['user']
+    readonly_fields = ['id', 'created_at']
+    
 
 @admin.register(Coupon_type)
 class CouponType(admin.ModelAdmin):
