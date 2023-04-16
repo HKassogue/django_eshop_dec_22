@@ -1,0 +1,15 @@
+decorator==5.1.1
+Django==4.1.5
+django-admin-volt==1.0.4
+django-countries==7.5.1
+django-mathfilters==1.0.0
+django_debug_toolbar==3.8.1
+mysql-client==0.0.1
+mysqlclient==2.1.1
+Pillow==9.4.0
+stripe==5.2.0
+traitlets==5.9.0
+typing_extensions==4.5.0
+urllib3==1.26.15
+wcwidth==0.2.6
+zipp==3.12.1
