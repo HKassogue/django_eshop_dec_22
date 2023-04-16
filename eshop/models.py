@@ -342,8 +342,11 @@ class Payments(models.Model):
     details = models.TextField(null=True, blank=True)
     order = models.OneToOneField('Order', on_delete=models.PROTECT, related_name='payment')
 
+    class Meta:
+        ordering = ["-payed_at", "ref"]
+
     def __str__(self):
-        return f"{self.ref}"
+        return f"Payment of {self.order} at {self.payed_at}"
 
 
 class Alerts(models.Model):

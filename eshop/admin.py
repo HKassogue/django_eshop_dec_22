@@ -264,7 +264,11 @@ class ReviewAdmin(admin.ModelAdmin):
 class PaymentsAdmin(admin.ModelAdmin):
     list_display = ['id', 'ref', 'payed_at', 'mode', 'details', 'order']
     list_filter = ['mode']
+    list_display_links = ['id', 'ref']
     autocomplete_fields = ['order']
+    ordering = ['-payed_at', 'ref']
+    fields = ['id', 'ref', 'payed_at', 'mode', 'details', 'order']
+    readonly_fields = ['payed_at', 'id']
 
 
 class AdminImageWidget(AdminFileWidget):
