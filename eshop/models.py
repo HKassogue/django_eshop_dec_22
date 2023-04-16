@@ -165,7 +165,7 @@ class Review(models.Model):
         ordering = ["-created_at", "-rate"]
 
     def __str__(self):
-        return f"{self.product.name} rated {self.rate} at {self.created_at}"
+        return f"{self.product.name} rated {self.rate} at {self.created_at.strftime('%Y-%m-%d, %H:%M:%S')}"
 
 
     @property
@@ -187,7 +187,7 @@ class Like(models.Model):
         ordering = ["-created_at", "-liked"]
 
     def __str__(self):
-        return f"{self.product.name}" + ("liked" if self.liked else "unliked") + f" at {self.created_at}"
+        return f"{self.product.name}" + ("liked" if self.liked else "unliked") + f" at {self.created_at.strftime('%Y-%m-%d, %H:%M:%S')}"
 
 
 class Coupon_type(models.Model):
@@ -293,7 +293,7 @@ class Arrival(models.Model):
     products = models.ManyToManyField('Product', through='Arrival_details', related_name='+')
 
     def __str__(self):
-        return f"{self.id} on {self.created_at.strftime('%Y-%m-%d at %H:%M:%S')}"
+        return f"{self.id} on {self.created_at.strftime('%Y-%m-%d, %H:%M:%S')}"
     
     @property
     def products_count(self):
@@ -346,7 +346,7 @@ class Payments(models.Model):
         ordering = ["-payed_at", "ref"]
 
     def __str__(self):
-        return f"Payment of {self.order} at {self.payed_at}"
+        return f"Payment of {self.order} at {self.payed_at.strftime('%Y-%m-%d, %H:%M:%S')}"
 
 
 class Alerts(models.Model):
@@ -363,7 +363,7 @@ class Alerts(models.Model):
         verbose_name_plural = 'alerts'
 
     def __str__(self):
-        return f"{self.id} at {self.created_at} : {self.status}"
+        return f"{self.id} at {self.created_at.strftime('%Y-%m-%d, %H:%M:%S')} : {self.status}"
 
 
 class Faqs(models.Model):
